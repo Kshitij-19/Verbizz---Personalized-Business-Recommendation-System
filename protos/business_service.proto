@@ -1,0 +1,55 @@
+syntax = "proto3";
+
+package business;
+
+message BusinessRequest {
+  int32 id = 1;
+}
+
+message NewBusinessRequest {
+  string businessid = 1;
+  string name = 2;
+  float rating = 3;
+  int32 review_count = 4;
+  string address = 5;
+  string category = 6;
+  string city = 7;
+  string state = 8;
+  string country = 9;
+  string zip_code = 10;
+  float latitude = 11;
+  float longitude = 12;
+  string phone = 13;
+  string price = 14;
+  string image_url = 15;
+  string url = 16;
+  float distance = 17;
+  string business_hours = 18;
+}
+
+message BusinessResponse {
+  int32 id = 1;
+  string businessid = 2;
+  string name = 3;
+  float rating = 4;
+  int32 review_count = 5;
+  string address = 6;
+  string category = 7;
+  string city = 8;
+  string state = 9;
+  string country = 10;
+  string zip_code = 11;
+  float latitude = 12;
+  float longitude = 13;
+  string phone = 14;
+  string price = 15;
+  string image_url = 16;
+  string url = 17;
+  float distance = 18;
+  string business_hours = 19;
+}
+
+service BusinessService {
+  rpc GetBusiness (BusinessRequest) returns (BusinessResponse);
+  rpc AddBusiness (NewBusinessRequest) returns (BusinessResponse);
+}
