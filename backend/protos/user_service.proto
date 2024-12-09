@@ -1,0 +1,73 @@
+syntax = "proto3";
+
+package user;
+
+// Service for user profile management
+service UserService {
+  rpc RegisterUser (RegisterUserRequest) returns (RegisterUserResponse);
+  rpc LoginUser (LoginUserRequest) returns (LoginUserResponse);
+  rpc GetUserProfile (GetUserProfileRequest) returns (GetUserProfileResponse);
+  rpc UpdateUserProfile (UpdateUserProfileRequest) returns (UpdateUserProfileResponse);
+  rpc DeleteUser (DeleteUserRequest) returns (DeleteUserResponse);
+}
+
+// Request and response for RegisterUser
+message RegisterUserRequest {
+  string email = 1;
+  string password = 2;
+  string name = 3;
+  string preferences = 4; // JSON string
+}
+
+message RegisterUserResponse {
+    string message = 1;
+    bool success = 2;
+    string recommendations = 3; // Recommendations for first-time users
+}
+
+// Request and response for LoginUser
+message LoginUserRequest {
+  string email = 1;
+  string password = 2;
+}
+
+message LoginUserResponse {
+    string message = 1;
+    bool success = 2;
+    string token = 3; // JWT token for authentication
+    string recommendations = 4; // Recommendations for returning users
+}
+
+// Request and response for GetUserProfile
+message GetUserProfileRequest {
+  int32 user_id = 1;
+}
+
+message GetUserProfileResponse {
+  int32 id = 1;
+  string email = 2;
+  string name = 3;
+  string preferences = 4; // JSON string
+}
+
+// Request and response for UpdateUserProfile
+message UpdateUserProfileRequest {
+  int32 user_id = 1;
+  string name = 2;
+  string preferences = 3; // JSON string
+}
+
+message UpdateUserProfileResponse {
+  string message = 1;
+  bool success = 2;
+}
+
+// Request and response for DeleteUser
+message DeleteUserRequest {
+  int32 user_id = 1;
+}
+
+message DeleteUserResponse {
+  string message = 1;
+  bool success = 2;
+}

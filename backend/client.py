@@ -2,6 +2,8 @@ import grpc
 from codegen import business_service_pb2 as pb2
 from codegen import business_service_pb2_grpc as pb2_grpc
 import uuid
+from codegen import user_service_pb2 as user_pb2
+from codegen import user_service_pb2_grpc as user_pb2_grpc
 
 def test_get_business():
     """
@@ -48,9 +50,108 @@ def test_add_business():
     except grpc.RpcError as e:
         print(f"Error during AddBusiness RPC: {e.details()} (Code: {e.code()})")
 
+def test_register_user():
+    """
+    Test the RegisterUser RPC by registering a new user.
+    """
+    try:
+        with grpc.insecure_channel('localhost:50051') as channel:
+            stub = user_pb2_grpc.UserServiceStub(channel)
+            response = stub.RegisterUser(user_pb2.RegisterUserRequest(
+                email="testuser@example.com",
+                password="securepassword123",
+                name="Test User",
+                preferences='{"category": ["Cafe", "Restaurant"], "location": "New York"}'
+            ))
+            print("RegisterUser Response:", response)
+    except grpc.RpcError as e:
+        print(f"Error during RegisterUser RPC: {e.details()} (Code: {e.code()})")
+
+
+def test_login_user():
+    """
+    Test the LoginUser RPC by logging in a registered user.
+    """
+    try:
+        with grpc.insecure_channel('localhost:50051') as channel:
+            stub = user_pb2_grpc.UserServiceStub(channel)
+            response = stub.LoginUser(user_pb2.LoginUserRequest(
+                email="testuser@example.com",
+                password="securepassword123"
+            ))
+            print("LoginUser Response:", response)
+            return response.token  # Return the token for further testing
+    except grpc.RpcError as e:
+        print(f"Error during LoginUser RPC: {e.details()} (Code: {e.code()})")
+
+
+def test_get_user_profile(token):
+    """
+    Test the GetUserProfile RPC by retrieving the user profile using a valid token.
+    """
+    try:
+        with grpc.insecure_channel('localhost:50051') as channel:
+            stub = user_pb2_grpc.UserServiceStub(channel)
+            # Set the token in metadata
+            metadata = [('authorization', token)]
+            response = stub.GetUserProfile(user_pb2.GetUserProfileRequest(user_id=1), metadata=metadata)
+            print("GetUserProfile Response:", response)
+    except grpc.RpcError as e:
+        print(f"Error during GetUserProfile RPC: {e.details()} (Code: {e.code()})")
+
+
+def test_update_user_profile(token):
+    """
+    Test the UpdateUserProfile RPC by updating the user's name and preferences.
+    """
+    try:
+        with grpc.insecure_channel('localhost:50051') as channel:
+            stub = user_pb2_grpc.UserServiceStub(channel)
+            # Set the token in metadata
+            metadata = [('authorization', token)]
+            response = stub.UpdateUserProfile(user_pb2.UpdateUserProfileRequest(
+                user_id=34227,
+                name="Updated User",
+                preferences='{"category": ["Gym", "Spa"], "location": "Los Angeles"}'
+            ), metadata=metadata)
+            print("UpdateUserProfile Response:", response)
+    except grpc.RpcError as e:
+        print(f"Error during UpdateUserProfile RPC: {e.details()} (Code: {e.code()})")
+
+
+def test_delete_user(token):
+    """
+    Test the DeleteUser RPC by deleting the user account.
+    """
+    try:
+        with grpc.insecure_channel('localhost:50051') as channel:
+            stub = user_pb2_grpc.UserServiceStub(channel)
+            # Set the token in metadata
+            metadata = [('authorization', token)]
+            response = stub.DeleteUser(user_pb2.DeleteUserRequest(user_id=34227), metadata=metadata)
+            print("DeleteUser Response:", response)
+    except grpc.RpcError as e:
+        print(f"Error during DeleteUser RPC: {e.details()} (Code: {e.code()})")
+
 
 if __name__ == "__main__":
-    print("Testing AddBusiness RPC:")
-    test_add_business()
-    print("\nTesting GetBusiness RPC:")
-    test_get_business()
+    # print("Testing AddBusiness RPC:")
+    # test_add_business()
+    # print("\nTesting GetBusiness RPC:")
+    # test_get_business()
+
+    print("Testing RegisterUser RPC:")
+    test_register_user()
+
+    print("\nTesting LoginUser RPC:")
+    token = test_login_user()
+
+    if token:
+        print("\nTesting GetUserProfile RPC:")
+        test_get_user_profile(token)
+
+        print("\nTesting UpdateUserProfile RPC:")
+        test_update_user_profile(token)
+
+        print("\nTesting DeleteUser RPC:")
+        test_delete_user(token)

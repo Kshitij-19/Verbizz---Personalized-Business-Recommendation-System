@@ -3,10 +3,10 @@ import grpc
 from codegen import business_service_pb2 as pb2
 from codegen import business_service_pb2_grpc as pb2_grpc
 
-from db.business_db import BusinessDatabase
+from db.db import Database
 
 # Initialize database connection
-db = BusinessDatabase(db_name="mydb", user="kirandevihosur", password="newpassword")
+db = Database(db_name="postgres", user="postgres", password="rootpass123")
 print("")
 
 class BusinessService(pb2_grpc.BusinessServiceServicer):
