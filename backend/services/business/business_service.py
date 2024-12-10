@@ -2,12 +2,21 @@ from concurrent import futures
 import grpc
 from codegen import business_service_pb2 as pb2
 from codegen import business_service_pb2_grpc as pb2_grpc
+from kafka import KafkaProducer
+import json
+from concurrent import futures
 
 from db.db import Database
 
 # Initialize database connection
 db = Database(db_name="postgres", user="postgres", password="rootpass123")
-print("")
+print("db info", db)
+
+# Initialize Kafka producer
+producer = KafkaProducer(
+    bootstrap_servers='localhost:9092',
+    value_serializer=lambda v: json.dumps(v).encode('utf-8')
+)
 
 class BusinessService(pb2_grpc.BusinessServiceServicer):
 
@@ -74,6 +83,26 @@ class BusinessService(pb2_grpc.BusinessServiceServicer):
                 request.url, request.distance, request.business_hours
             ))
 
+            # Send the new business data to Kafka
+            try:
+                new_business = {
+                    "id": business_id['id'],
+                    "businessid": request.businessid,
+                    "name": request.name,
+                    "rating": request.rating,
+                    "review_count": request.review_count,
+                    "address": request.address,
+                    "category": request.category,
+                    "city": request.city,
+                    "price": request.price
+                }
+                producer.send('new-business-data', value=new_business)
+                print(f"New business sent to Kafka: {new_business}")
+            except Exception as e:
+                context.set_code(grpc.StatusCode.INTERNAL)
+                context.set_details(f"Failed to send business to Kafka: {str(e)}")
+                return pb2.BusinessResponse()
+
             return pb2.BusinessResponse(
                 id=business_id['id'],
                 businessid=request.businessid,
@@ -92,13 +121,14 @@ class BusinessService(pb2_grpc.BusinessServiceServicer):
                 price=request.price,
                 image_url=request.image_url,
                 url=request.url,
-                distance=request.distance,
+                distance=request.distance
             )
         except Exception as e:
             context.set_code(grpc.StatusCode.INTERNAL)
             context.set_details('Internal server error')
             print("Exception occurred:", e)
             return pb2.BusinessResponse()
+        
 
     def GetBusinessByName(self, request, context):
         query = """
@@ -279,4 +309,3 @@ class BusinessService(pb2_grpc.BusinessServiceServicer):
             url=business['url'],
             distance=business.get('distance', 0.0),
             business_hours=business.get('business_hours', '')
-        )
