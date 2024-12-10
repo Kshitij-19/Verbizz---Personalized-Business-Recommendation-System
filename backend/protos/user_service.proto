@@ -35,7 +35,8 @@ message LoginUserResponse {
     string message = 1;
     bool success = 2;
     string token = 3; // JWT token for authentication
-    string recommendations = 4; // Recommendations for returning users
+    int32 user_id = 4; // Add user_id to the response
+    string recommendations = 5; // Optional field for returning recommendations
 }
 
 // Request and response for GetUserProfile

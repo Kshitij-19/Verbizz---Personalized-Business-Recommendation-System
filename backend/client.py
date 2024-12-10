@@ -68,36 +68,16 @@ def test_register_user():
         print(f"Error during RegisterUser RPC: {e.details()} (Code: {e.code()})")
 
 
-def test_login_user():
-    """
-    Test the LoginUser RPC by logging in a registered user.
-    """
+def test_get_user_profile(token, user_id):
     try:
         with grpc.insecure_channel('localhost:50051') as channel:
             stub = user_pb2_grpc.UserServiceStub(channel)
-            response = stub.LoginUser(user_pb2.LoginUserRequest(
-                email="testuser@example.com",
-                password="securepassword123"
-            ))
-            print("LoginUser Response:", response)
-            return response.token  # Return the token for further testing
-    except grpc.RpcError as e:
-        print(f"Error during LoginUser RPC: {e.details()} (Code: {e.code()})")
-
-
-def test_get_user_profile(token):
-    """
-    Test the GetUserProfile RPC by retrieving the user profile using a valid token.
-    """
-    try:
-        with grpc.insecure_channel('localhost:50051') as channel:
-            stub = user_pb2_grpc.UserServiceStub(channel)
-            # Set the token in metadata
             metadata = [('authorization', token)]
-            response = stub.GetUserProfile(user_pb2.GetUserProfileRequest(user_id=1), metadata=metadata)
+            response = stub.GetUserProfile(user_pb2.GetUserProfileRequest(user_id=user_id), metadata=metadata)
             print("GetUserProfile Response:", response)
     except grpc.RpcError as e:
         print(f"Error during GetUserProfile RPC: {e.details()} (Code: {e.code()})")
+
 
 
 def test_update_user_profile(token):
@@ -110,7 +90,7 @@ def test_update_user_profile(token):
             # Set the token in metadata
             metadata = [('authorization', token)]
             response = stub.UpdateUserProfile(user_pb2.UpdateUserProfileRequest(
-                user_id=34227,
+                user_id=1,
                 name="Updated User",
                 preferences='{"category": ["Gym", "Spa"], "location": "Los Angeles"}'
             ), metadata=metadata)
@@ -128,11 +108,26 @@ def test_delete_user(token):
             stub = user_pb2_grpc.UserServiceStub(channel)
             # Set the token in metadata
             metadata = [('authorization', token)]
-            response = stub.DeleteUser(user_pb2.DeleteUserRequest(user_id=34227), metadata=metadata)
+            response = stub.DeleteUser(user_pb2.DeleteUserRequest(user_id=1), metadata=metadata)
             print("DeleteUser Response:", response)
     except grpc.RpcError as e:
         print(f"Error during DeleteUser RPC: {e.details()} (Code: {e.code()})")
 
+def test_login_user():
+    """
+    Test the LoginUser RPC by logging in a registered user.
+    """
+    try:
+        with grpc.insecure_channel('localhost:50051') as channel:
+            stub = user_pb2_grpc.UserServiceStub(channel)
+            response = stub.LoginUser(user_pb2.LoginUserRequest(
+                email="testuser@example.com",
+                password="securepassword123"
+            ))
+            print("LoginUser Response:", response)
+            return response.token, response.user_id  # Return token and user_id
+    except grpc.RpcError as e:
+        print(f"Error during LoginUser RPC: {e.details()} (Code: {e.code()})")
 
 if __name__ == "__main__":
     # print("Testing AddBusiness RPC:")
@@ -144,11 +139,11 @@ if __name__ == "__main__":
     test_register_user()
 
     print("\nTesting LoginUser RPC:")
-    token = test_login_user()
+    token, user_id = test_login_user()
 
     if token:
         print("\nTesting GetUserProfile RPC:")
-        test_get_user_profile(token)
+        test_get_user_profile(token, user_id)
 
         print("\nTesting UpdateUserProfile RPC:")
         test_update_user_profile(token)

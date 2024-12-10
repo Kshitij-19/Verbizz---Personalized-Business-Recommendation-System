@@ -24,7 +24,7 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x12user_service.proto\x12\x04user\"Y\n\x13RegisterUserRequest\x12\r\n\x05\x65mail\x18\x01 \x01(\t\x12\x10\n\x08password\x18\x02 \x01(\t\x12\x0c\n\x04name\x18\x03 \x01(\t\x12\x13\n\x0bpreferences\x18\x04 \x01(\t\"Q\n\x14RegisterUserResponse\x12\x0f\n\x07message\x18\x01 \x01(\t\x12\x0f\n\x07success\x18\x02 \x01(\x08\x12\x17\n\x0frecommendations\x18\x03 \x01(\t\"3\n\x10LoginUserRequest\x12\r\n\x05\x65mail\x18\x01 \x01(\t\x12\x10\n\x08password\x18\x02 \x01(\t\"]\n\x11LoginUserResponse\x12\x0f\n\x07message\x18\x01 \x01(\t\x12\x0f\n\x07success\x18\x02 \x01(\x08\x12\r\n\x05token\x18\x03 \x01(\t\x12\x17\n\x0frecommendations\x18\x04 \x01(\t\"(\n\x15GetUserProfileRequest\x12\x0f\n\x07user_id\x18\x01 \x01(\x05\"V\n\x16GetUserProfileResponse\x12\n\n\x02id\x18\x01 \x01(\x05\x12\r\n\x05\x65mail\x18\x02 \x01(\t\x12\x0c\n\x04name\x18\x03 \x01(\t\x12\x13\n\x0bpreferences\x18\x04 \x01(\t\"N\n\x18UpdateUserProfileRequest\x12\x0f\n\x07user_id\x18\x01 \x01(\x05\x12\x0c\n\x04name\x18\x02 \x01(\t\x12\x13\n\x0bpreferences\x18\x03 \x01(\t\"=\n\x19UpdateUserProfileResponse\x12\x0f\n\x07message\x18\x01 \x01(\t\x12\x0f\n\x07success\x18\x02 \x01(\x08\"$\n\x11\x44\x65leteUserRequest\x12\x0f\n\x07user_id\x18\x01 \x01(\x05\"6\n\x12\x44\x65leteUserResponse\x12\x0f\n\x07message\x18\x01 \x01(\t\x12\x0f\n\x07success\x18\x02 \x01(\x08\x32\xf6\x02\n\x0bUserService\x12\x45\n\x0cRegisterUser\x12\x19.user.RegisterUserRequest\x1a\x1a.user.RegisterUserResponse\x12<\n\tLoginUser\x12\x16.user.LoginUserRequest\x1a\x17.user.LoginUserResponse\x12K\n\x0eGetUserProfile\x12\x1b.user.GetUserProfileRequest\x1a\x1c.user.GetUserProfileResponse\x12T\n\x11UpdateUserProfile\x12\x1e.user.UpdateUserProfileRequest\x1a\x1f.user.UpdateUserProfileResponse\x12?\n\nDeleteUser\x12\x17.user.DeleteUserRequest\x1a\x18.user.DeleteUserResponseb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x12user_service.proto\x12\x04user\"Y\n\x13RegisterUserRequest\x12\r\n\x05\x65mail\x18\x01 \x01(\t\x12\x10\n\x08password\x18\x02 \x01(\t\x12\x0c\n\x04name\x18\x03 \x01(\t\x12\x13\n\x0bpreferences\x18\x04 \x01(\t\"Q\n\x14RegisterUserResponse\x12\x0f\n\x07message\x18\x01 \x01(\t\x12\x0f\n\x07success\x18\x02 \x01(\x08\x12\x17\n\x0frecommendations\x18\x03 \x01(\t\"3\n\x10LoginUserRequest\x12\r\n\x05\x65mail\x18\x01 \x01(\t\x12\x10\n\x08password\x18\x02 \x01(\t\"n\n\x11LoginUserResponse\x12\x0f\n\x07message\x18\x01 \x01(\t\x12\x0f\n\x07success\x18\x02 \x01(\x08\x12\r\n\x05token\x18\x03 \x01(\t\x12\x0f\n\x07user_id\x18\x04 \x01(\x05\x12\x17\n\x0frecommendations\x18\x05 \x01(\t\"(\n\x15GetUserProfileRequest\x12\x0f\n\x07user_id\x18\x01 \x01(\x05\"V\n\x16GetUserProfileResponse\x12\n\n\x02id\x18\x01 \x01(\x05\x12\r\n\x05\x65mail\x18\x02 \x01(\t\x12\x0c\n\x04name\x18\x03 \x01(\t\x12\x13\n\x0bpreferences\x18\x04 \x01(\t\"N\n\x18UpdateUserProfileRequest\x12\x0f\n\x07user_id\x18\x01 \x01(\x05\x12\x0c\n\x04name\x18\x02 \x01(\t\x12\x13\n\x0bpreferences\x18\x03 \x01(\t\"=\n\x19UpdateUserProfileResponse\x12\x0f\n\x07message\x18\x01 \x01(\t\x12\x0f\n\x07success\x18\x02 \x01(\x08\"$\n\x11\x44\x65leteUserRequest\x12\x0f\n\x07user_id\x18\x01 \x01(\x05\"6\n\x12\x44\x65leteUserResponse\x12\x0f\n\x07message\x18\x01 \x01(\t\x12\x0f\n\x07success\x18\x02 \x01(\x08\x32\xf6\x02\n\x0bUserService\x12\x45\n\x0cRegisterUser\x12\x19.user.RegisterUserRequest\x1a\x1a.user.RegisterUserResponse\x12<\n\tLoginUser\x12\x16.user.LoginUserRequest\x1a\x17.user.LoginUserResponse\x12K\n\x0eGetUserProfile\x12\x1b.user.GetUserProfileRequest\x1a\x1c.user.GetUserProfileResponse\x12T\n\x11UpdateUserProfile\x12\x1e.user.UpdateUserProfileRequest\x1a\x1f.user.UpdateUserProfileResponse\x12?\n\nDeleteUser\x12\x17.user.DeleteUserRequest\x1a\x18.user.DeleteUserResponseb\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -38,19 +38,19 @@ if not _descriptor._USE_C_DESCRIPTORS:
   _globals['_LOGINUSERREQUEST']._serialized_start=202
   _globals['_LOGINUSERREQUEST']._serialized_end=253
   _globals['_LOGINUSERRESPONSE']._serialized_start=255
-  _globals['_LOGINUSERRESPONSE']._serialized_end=348
-  _globals['_GETUSERPROFILEREQUEST']._serialized_start=350
-  _globals['_GETUSERPROFILEREQUEST']._serialized_end=390
-  _globals['_GETUSERPROFILERESPONSE']._serialized_start=392
-  _globals['_GETUSERPROFILERESPONSE']._serialized_end=478
-  _globals['_UPDATEUSERPROFILEREQUEST']._serialized_start=480
-  _globals['_UPDATEUSERPROFILEREQUEST']._serialized_end=558
-  _globals['_UPDATEUSERPROFILERESPONSE']._serialized_start=560
-  _globals['_UPDATEUSERPROFILERESPONSE']._serialized_end=621
-  _globals['_DELETEUSERREQUEST']._serialized_start=623
-  _globals['_DELETEUSERREQUEST']._serialized_end=659
-  _globals['_DELETEUSERRESPONSE']._serialized_start=661
-  _globals['_DELETEUSERRESPONSE']._serialized_end=715
-  _globals['_USERSERVICE']._serialized_start=718
-  _globals['_USERSERVICE']._serialized_end=1092
+  _globals['_LOGINUSERRESPONSE']._serialized_end=365
+  _globals['_GETUSERPROFILEREQUEST']._serialized_start=367
+  _globals['_GETUSERPROFILEREQUEST']._serialized_end=407
+  _globals['_GETUSERPROFILERESPONSE']._serialized_start=409
+  _globals['_GETUSERPROFILERESPONSE']._serialized_end=495
+  _globals['_UPDATEUSERPROFILEREQUEST']._serialized_start=497
+  _globals['_UPDATEUSERPROFILEREQUEST']._serialized_end=575
+  _globals['_UPDATEUSERPROFILERESPONSE']._serialized_start=577
+  _globals['_UPDATEUSERPROFILERESPONSE']._serialized_end=638
+  _globals['_DELETEUSERREQUEST']._serialized_start=640
+  _globals['_DELETEUSERREQUEST']._serialized_end=676
+  _globals['_DELETEUSERRESPONSE']._serialized_start=678
+  _globals['_DELETEUSERRESPONSE']._serialized_end=732
+  _globals['_USERSERVICE']._serialized_start=735
+  _globals['_USERSERVICE']._serialized_end=1109
 # @@protoc_insertion_point(module_scope)
