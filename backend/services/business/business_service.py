@@ -307,5 +307,5 @@ class BusinessService(pb2_grpc.BusinessServiceServicer):
             price=business['price'],
             image_url=business['image_url'],
             url=business['url'],
-            distance=business.get('distance', 0.0),
-            business_hours=business.get('business_hours', '')
+            distance=business.get('distance', 0.0)
+        )
