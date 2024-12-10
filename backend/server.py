@@ -1,9 +1,11 @@
 from concurrent import futures
 import grpc
 import redis
+import threading
 from codegen import business_service_pb2_grpc, recommendation_service_pb2_grpc
 from services.business.business_service import BusinessService
 from services.recommendation.recommendation_service import RecommendationService
+from consumers.business_consumer import consume_business_messages
 
 
 def initialize_redis():
@@ -30,6 +32,11 @@ def serve():
     if not redis_client:
         print("Failed to initialize Redis. Exiting...")
         return
+
+    # Start Kafka consumer in a separate thread
+    consumer_thread = threading.Thread(target=consume_business_messages, daemon=True)
+    consumer_thread.start()
+    print("Kafka consumer thread started...")
 
     # Create the gRPC server
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))

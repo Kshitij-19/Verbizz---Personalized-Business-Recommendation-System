@@ -18,13 +18,6 @@ except FileNotFoundError:
     similarity_matrix = None
     print("Initialized with empty data and similarity matrix.")
 
-# Kafka Consumer
-consumer = KafkaConsumer(
-    'new-business-data',
-    bootstrap_servers='localhost:9092',
-    auto_offset_reset='earliest',
-    value_deserializer=lambda v: json.loads(v.decode('utf-8'))
-)
 
 def update_similarity_matrix(new_data):
     """
@@ -62,8 +55,22 @@ def update_similarity_matrix(new_data):
 
     print("Similarity matrix updated successfully.")
 
-# Listen for new business messages
-for message in consumer:
-    new_business = message.value
-    print(f"Received new business: {new_business}")
-    update_similarity_matrix(new_business)
+def consume_business_messages():
+    # Initialize Kafka Consumer
+    consumer = KafkaConsumer(
+        'new-business-data',
+        bootstrap_servers='localhost:9092',
+        group_id='my-consumer-group',
+        auto_offset_reset='latest',
+        enable_auto_commit=True,
+        value_deserializer=lambda v: json.loads(v.decode('utf-8'))
+    )
+    print("Kafka consumer listening for messages...")
+
+    for message in consumer:
+        try:
+            new_business = message.value
+            print(f"Received new business: {new_business}")
+            update_similarity_matrix(new_business)
+        except Exception as e:
+            print(f"Error processing message: {e}")

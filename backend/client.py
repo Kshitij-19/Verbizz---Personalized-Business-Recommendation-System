@@ -36,22 +36,22 @@ def test_add_business():
             stub = pb2_grpc.BusinessServiceStub(channel)
             response = stub.AddBusiness(pb2.NewBusinessRequest(
                 businessid=unique_businessid,
-                name="Test Cafe",
-                rating=4.5,
-                review_count=120,
-                address="123 Main Street",
+                name="Italian Cafe",
+                rating=4.3,
+                review_count=150,
+                address="931 Main Street",
                 category="Cafe",
                 city="New York",
                 state="NY",
                 country="USA",
-                zip_code="10001",
-                latitude=40.7128,
-                longitude=-74.0060,
-                phone="123-456-7890",
-                price="$$",
-                image_url="http://example.com/image.jpg",
-                url="http://example.com",
-                distance=0.5
+                zip_code="13204",
+                latitude=80.7126,
+                longitude=-14.0060,
+                phone="485-456-4830",
+                price="$$$",
+                image_url="http://example1.com/image1.jpg",
+                url="http://example1.com",
+                distance=2
             ))
             print("Added Business:")
             print(f"  ID: {response.id}")
@@ -72,10 +72,11 @@ def test_get_recommendations():
             stub = rec_pb2_grpc.RecommendationServiceStub(channel)
             # Example: Recommendation request
             request = rec_pb2.RecommendationRequest(
-                category="Korean",
+                category="Cafe",
                 city="New York",
-                preferences="Asian",
-                min_rating=4.0
+                min_rating=4.0,
+                min_review_count=200,
+                price="$$"
             )
             response = stub.GetRecommendations(request)
             if response.recommendations:
@@ -83,7 +84,8 @@ def test_get_recommendations():
                 for rec in response.recommendations:
                     print(f"  Name: {rec.name}")
                     print(f"  Category: {rec.category}")
-                    print(f"  Rating: {rec.rating}")
+                    print(f"  Rating: {round(rec.rating, 2)}")
+                    print(f"  Review Count: {rec.review_count}")
                     print(f"  City: {rec.city}")
                     print(f"  Address: {rec.address}")
                     print(f"  Phone: {rec.phone}")
@@ -98,9 +100,9 @@ def test_get_recommendations():
 
 
 if __name__ == "__main__":
-    # print("Testing AddBusiness RPC:")
-    # test_add_business()
+    print("Testing AddBusiness RPC:")
+    test_add_business()
     # print("\nTesting GetBusiness RPC:")
     # test_get_business()
-    print("\nTesting GetRecommendations RPC:")
-    test_get_recommendations()
+    # print("\nTesting GetRecommendations RPC:")
+    # test_get_recommendations()
