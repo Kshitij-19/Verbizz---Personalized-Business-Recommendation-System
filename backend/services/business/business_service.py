@@ -85,3 +85,34 @@ class BusinessService(pb2_grpc.BusinessServiceServicer):
             url=request.url,
             distance=request.distance,
         )
+
+    def GetBusinessByName(self, request, context):
+        query = """
+        SELECT * FROM Business WHERE name = %s
+        """
+        business = db.fetch_one(query, (request.name,))
+        if not business:
+            context.set_code(grpc.StatusCode.NOT_FOUND)
+            context.set_details('Business not found')
+            return pb2.BusinessResponse()
+
+        return pb2.BusinessResponse(
+            id=business['id'],
+            businessid=business['businessid'],
+            name=business['name'],
+            rating=business['rating'],
+            review_count=business['review_count'],
+            address=business['address'],
+            category=business['category'],
+            city=business['city'],
+            state=business['state'],
+            country=business['country'],
+            zip_code=business['zip_code'],
+            latitude=business['latitude'],
+            longitude=business['longitude'],
+            phone=business['phone'],
+            price=business['price'],
+            image_url=business['image_url'],
+            url=business['url'],
+            distance=business['distance']
+        )

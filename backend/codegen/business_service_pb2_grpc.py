@@ -44,6 +44,11 @@ class BusinessServiceStub(object):
                 request_serializer=business__service__pb2.NewBusinessRequest.SerializeToString,
                 response_deserializer=business__service__pb2.BusinessResponse.FromString,
                 _registered_method=True)
+        self.GetBusinessByName = channel.unary_unary(
+                '/business.BusinessService/GetBusinessByName',
+                request_serializer=business__service__pb2.BusinessByNameRequest.SerializeToString,
+                response_deserializer=business__service__pb2.BusinessResponse.FromString,
+                _registered_method=True)
 
 
 class BusinessServiceServicer(object):
@@ -61,6 +66,12 @@ class BusinessServiceServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def GetBusinessByName(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_BusinessServiceServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -72,6 +83,11 @@ def add_BusinessServiceServicer_to_server(servicer, server):
             'AddBusiness': grpc.unary_unary_rpc_method_handler(
                     servicer.AddBusiness,
                     request_deserializer=business__service__pb2.NewBusinessRequest.FromString,
+                    response_serializer=business__service__pb2.BusinessResponse.SerializeToString,
+            ),
+            'GetBusinessByName': grpc.unary_unary_rpc_method_handler(
+                    servicer.GetBusinessByName,
+                    request_deserializer=business__service__pb2.BusinessByNameRequest.FromString,
                     response_serializer=business__service__pb2.BusinessResponse.SerializeToString,
             ),
     }
@@ -128,6 +144,33 @@ class BusinessService(object):
             target,
             '/business.BusinessService/AddBusiness',
             business__service__pb2.NewBusinessRequest.SerializeToString,
+            business__service__pb2.BusinessResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def GetBusinessByName(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/business.BusinessService/GetBusinessByName',
+            business__service__pb2.BusinessByNameRequest.SerializeToString,
             business__service__pb2.BusinessResponse.FromString,
             options,
             channel_credentials,

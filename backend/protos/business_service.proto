@@ -6,6 +6,10 @@ message BusinessRequest {
   int32 id = 1;
 }
 
+message BusinessByNameRequest {
+  string name = 1;
+}
+
 message NewBusinessRequest {
   string businessid = 1;
   string name = 2;
@@ -52,4 +56,5 @@ message BusinessResponse {
 service BusinessService {
   rpc GetBusiness (BusinessRequest) returns (BusinessResponse);
   rpc AddBusiness (NewBusinessRequest) returns (BusinessResponse);
+  rpc GetBusinessByName (BusinessByNameRequest) returns (BusinessResponse);
 }

@@ -129,11 +129,25 @@ def test_login_user():
     except grpc.RpcError as e:
         print(f"Error during LoginUser RPC: {e.details()} (Code: {e.code()})")
 
+def test_get_business_by_name():
+    """
+    Test the GetBusinessByName RPC by querying for a business by its name.
+    """
+    try:
+        with grpc.insecure_channel('localhost:50051') as channel:
+            stub = pb2_grpc.BusinessServiceStub(channel)
+            response = stub.GetBusinessByName(pb2.BusinessByNameRequest(name="Test Cafe"))
+            print("Business Details by Name:", response)
+    except grpc.RpcError as e:
+        print(f"Error during GetBusinessByName RPC: {e.details()} (Code: {e.code()})")
+
 if __name__ == "__main__":
-    # print("Testing AddBusiness RPC:")
-    # test_add_business()
-    # print("\nTesting GetBusiness RPC:")
-    # test_get_business()
+    print("Testing AddBusiness RPC:")
+    test_add_business()
+    print("\nTesting GetBusiness RPC:")
+    test_get_business()
+    print("\nTesting GetBusinessByName RPC:")
+    test_get_business_by_name()
 
     print("Testing RegisterUser RPC:")
     test_register_user()
