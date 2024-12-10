@@ -6,7 +6,7 @@ from codegen import business_service_pb2_grpc, recommendation_service_pb2_grpc
 from services.business.business_service import BusinessService
 from services.recommendation.recommendation_service import RecommendationService
 from consumers.business_consumer import consume_business_messages
-
+from services.user.user_service import UserService
 
 def initialize_redis():
     """
@@ -48,6 +48,9 @@ def serve():
     # Add RecommendationService to the server
     recommendation_service = RecommendationService(redis_client=redis_client)  # Pass Redis to the service
     recommendation_service_pb2_grpc.add_RecommendationServiceServicer_to_server(recommendation_service, server)
+    
+    # Add UserService to the server
+    user_pb2_grpc.add_UserServiceServicer_to_server(UserService(), server)
 
     # Bind server to port 50051
     server.add_insecure_port('[::]:50051')
