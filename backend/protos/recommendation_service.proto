@@ -1,0 +1,37 @@
+syntax = "proto3";
+
+package recommendation;
+
+// Recommendation Service
+service RecommendationService {
+    // RPC to get recommendations
+    rpc GetRecommendations (RecommendationRequest) returns (RecommendationResponse);
+}
+
+// Request message for recommendations
+message RecommendationRequest {
+    string category = 1;           // Category of the business (e.g., "Restaurant")
+    string city = 2;               // City to filter businesses (e.g., "New York")
+    float min_rating = 3;          // Minimum rating (e.g., 4.0)
+    int32 min_review_count = 4;    // Minimum review count
+    string price = 5;              // Price range
+}
+
+// Response message for recommendations
+message RecommendationResponse {
+    repeated BusinessRecommendation recommendations = 1; // List of recommended businesses
+}
+
+// Business recommendation details
+message BusinessRecommendation {
+    string name = 1;               // Name of the business
+    string category = 2;           // Category of the business
+    float rating = 3;              // Rating of the business
+    int32 review_count = 4;        // Review count of the business
+    string city = 5;               // City of the business
+    string address = 6;            // Address of the business
+    string phone = 7;              // Phone number
+    string price = 8;              // Price range
+    string image_url = 9;          // Image URL
+    string url = 10;               // Business URL
+}

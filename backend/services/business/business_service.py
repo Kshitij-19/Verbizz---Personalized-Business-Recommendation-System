@@ -2,12 +2,21 @@ from concurrent import futures
 import grpc
 from codegen import business_service_pb2 as pb2
 from codegen import business_service_pb2_grpc as pb2_grpc
+from kafka import KafkaProducer
+import json
+from concurrent import futures
 
 from db.business_db import BusinessDatabase
 
 # Initialize database connection
 db = BusinessDatabase(db_name="mydb", user="kirandevihosur", password="newpassword")
-print("")
+print("db info", db)
+
+# Initialize Kafka producer
+producer = KafkaProducer(
+    bootstrap_servers='localhost:9092',
+    value_serializer=lambda v: json.dumps(v).encode('utf-8')
+)
 
 class BusinessService(pb2_grpc.BusinessServiceServicer):
 
@@ -43,28 +52,57 @@ class BusinessService(pb2_grpc.BusinessServiceServicer):
         )
 
     def AddBusiness(self, request, context):
-        # Check if the businessid already exists
+        """
+        Handle the AddBusiness RPC. Adds a new business to the database and sends the new business to Kafka.
+        """
+        # Check if the business ID already exists
         check_query = "SELECT id FROM Business WHERE businessid = %s"
         existing_business = db.fetch_one(check_query, (request.businessid,))
         if existing_business:
             context.set_code(grpc.StatusCode.ALREADY_EXISTS)
-            context.set_details('Business with this businessid already exists')
+            context.set_details("Business with this businessid already exists")
             return pb2.BusinessResponse()
 
-        # Insert new business if no duplicate exists
+        # Insert the new business into the database
         query = """
         INSERT INTO Business (businessid, name, rating, review_count, address, category, 
-                            city, state, country, zip_code, latitude, longitude, 
-                            phone, price, image_url, url, distance)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                              city, state, country, zip_code, latitude, longitude, 
+                              phone, price, image_url, url, distance, createdAt, updatedAt)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
         RETURNING id
         """
-        business_id = db.fetch_one(query, (
-            request.businessid, request.name, request.rating, request.review_count, request.address,
-            request.category, request.city, request.state, request.country, request.zip_code,
-            request.latitude, request.longitude, request.phone, request.price, request.image_url,
-            request.url, request.distance
-        ))
+        try:
+            business_id = db.fetch_one(query, (
+                request.businessid, request.name, request.rating, request.review_count, request.address,
+                request.category, request.city, request.state, request.country, request.zip_code,
+                request.latitude, request.longitude, request.phone, request.price, request.image_url,
+                request.url, request.distance
+            ))
+        except Exception as e:
+            context.set_code(grpc.StatusCode.INTERNAL)
+            context.set_details(f"Failed to add business: {str(e)}")
+            return pb2.BusinessResponse()
+
+        # Send the new business data to Kafka
+        try:
+            new_business = {
+                "id": business_id['id'],
+                "businessid": request.businessid,
+                "name": request.name,
+                "rating": request.rating,
+                "review_count": request.review_count,
+                "address": request.address,
+                "category": request.category,
+                "city": request.city,
+                "price": request.price
+            }
+            producer.send('new-business-data', value=new_business)
+            print(f"New business sent to Kafka: {new_business}")
+        except Exception as e:
+            context.set_code(grpc.StatusCode.INTERNAL)
+            context.set_details(f"Failed to send business to Kafka: {str(e)}")
+            return pb2.BusinessResponse()
+
         return pb2.BusinessResponse(
             id=business_id['id'],
             businessid=request.businessid,
@@ -83,5 +121,5 @@ class BusinessService(pb2_grpc.BusinessServiceServicer):
             price=request.price,
             image_url=request.image_url,
             url=request.url,
-            distance=request.distance,
+            distance=request.distance
         )
