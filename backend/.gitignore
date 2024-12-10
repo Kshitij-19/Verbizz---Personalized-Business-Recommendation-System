@@ -1,2 +1,8 @@
 /data
 /.idea
+# Ignore macOS system files
+.DS_Store
+../.DS_Store
+
+# Ignore Redis dump file
+dump.rdb
