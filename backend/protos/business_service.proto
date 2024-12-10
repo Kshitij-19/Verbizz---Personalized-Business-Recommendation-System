@@ -53,8 +53,39 @@ message BusinessResponse {
   string business_hours = 19;
 }
 
+message BusinessByLocationRequest {
+  float latitude = 1;
+  float longitude = 2;
+  float radius = 3; // in kilometers
+}
+
+message CategoryRequest {
+  string category = 1;
+}
+
+message RatingRequest {
+  float min_rating = 1;
+}
+
+message BusinessByProximityRequest {
+  float latitude = 1;
+  float longitude = 2;
+  int32 limit = 3; // Number of results
+}
+
+message TrendingRequest {}
+
+message BusinessListResponse {
+  repeated BusinessResponse businesses = 1;
+}
+
 service BusinessService {
   rpc GetBusiness (BusinessRequest) returns (BusinessResponse);
   rpc AddBusiness (NewBusinessRequest) returns (BusinessResponse);
   rpc GetBusinessByName (BusinessByNameRequest) returns (BusinessResponse);
+  rpc GetBusinessByLocation (BusinessByLocationRequest) returns (BusinessListResponse);
+  rpc GetBusinessByCategory (CategoryRequest) returns (BusinessListResponse);
+  rpc GetBusinessByRating (RatingRequest) returns (BusinessListResponse);
+  rpc GetBusinessByProximity (BusinessByProximityRequest) returns (BusinessListResponse);
+  rpc GetTrendingBusinesses (TrendingRequest) returns (BusinessListResponse);
 }

@@ -141,6 +141,73 @@ def test_get_business_by_name():
     except grpc.RpcError as e:
         print(f"Error during GetBusinessByName RPC: {e.details()} (Code: {e.code()})")
 
+def test_get_business_by_location():
+    with grpc.insecure_channel('localhost:50051') as channel:
+        stub = pb2_grpc.BusinessServiceStub(channel)
+        try:
+            response = stub.GetBusinessByLocation(pb2.BusinessByLocationRequest(
+                latitude=40.7128,
+                longitude=-74.0060,
+                radius=5.0  # 5 km
+            ))
+            print("Businesses by Location:", response)
+        except grpc.RpcError as e:
+            print(f"Error during GetBusinessByLocation RPC: {e.details()} (Code: {e.code()})")
+
+
+def test_get_business_by_category():
+    """
+    Test the GetBusinessByCategory RPC by querying for businesses in a specific category.
+    """
+    try:
+        with grpc.insecure_channel('localhost:50051') as channel:
+            stub = pb2_grpc.BusinessServiceStub(channel)
+            response = stub.GetBusinessByCategory(pb2.CategoryRequest(category="Cafe"))
+            print("Businesses by Category:", response)
+    except grpc.RpcError as e:
+        print(f"Error during GetBusinessByCategory RPC: {e.details()} (Code: {e.code()})")
+
+
+def test_get_business_by_rating():
+    """
+    Test the GetBusinessByRating RPC by querying for businesses with a minimum rating.
+    """
+    try:
+        with grpc.insecure_channel('localhost:50051') as channel:
+            stub = pb2_grpc.BusinessServiceStub(channel)
+            response = stub.GetBusinessByRating(pb2.RatingRequest(min_rating=4.0))
+            print("Businesses by Rating:", response)
+    except grpc.RpcError as e:
+        print(f"Error during GetBusinessByRating RPC: {e.details()} (Code: {e.code()})")
+
+
+def test_get_business_by_proximity():
+    with grpc.insecure_channel('localhost:50051') as channel:
+        stub = pb2_grpc.BusinessServiceStub(channel)
+        try:
+            response = stub.GetBusinessByProximity(pb2.BusinessByProximityRequest(
+                latitude=40.7128,
+                longitude=-74.0060,
+                limit=2  # Top 2 closest businesses
+            ))
+            print("Businesses by Proximity:", response)
+        except grpc.RpcError as e:
+            print(f"Error during GetBusinessByProximity RPC: {e.details()} (Code: {e.code()})")
+
+
+def test_get_trending_businesses():
+    """
+    Test the GetTrendingBusinesses RPC by querying for trending businesses.
+    """
+    try:
+        with grpc.insecure_channel('localhost:50051') as channel:
+            stub = pb2_grpc.BusinessServiceStub(channel)
+            response = stub.GetTrendingBusinesses(pb2.TrendingRequest())
+            print("Trending Businesses:", response)
+    except grpc.RpcError as e:
+        print(f"Error during GetTrendingBusinesses RPC: {e.details()} (Code: {e.code()})")
+
+
 if __name__ == "__main__":
     print("Testing AddBusiness RPC:")
     test_add_business()
@@ -148,6 +215,21 @@ if __name__ == "__main__":
     test_get_business()
     print("\nTesting GetBusinessByName RPC:")
     test_get_business_by_name()
+
+    print("\nTesting GetBusinessByLocation RPC:")
+    test_get_business_by_location()
+
+    print("\nTesting GetBusinessByCategory RPC:")
+    test_get_business_by_category()
+
+    print("\nTesting GetBusinessByRating RPC:")
+    test_get_business_by_rating()
+
+    print("\nTesting GetBusinessByProximity RPC:")
+    test_get_business_by_proximity()
+
+    print("\nTesting GetTrendingBusinesses RPC:")
+    test_get_trending_businesses()
 
     print("Testing RegisterUser RPC:")
     test_register_user()
