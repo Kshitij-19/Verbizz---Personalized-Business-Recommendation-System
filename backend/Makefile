@@ -6,33 +6,27 @@ export $(shell sed 's/=.*//' .env)
 DOCKER_USERNAME := $(DOCKER_USERNAME)
 VERSION ?= latest
 
-# Define services and their directories
-SERVICES := business recommendation user
+# Services list (for modular builds, if needed in the future)
+SERVICES := server
 
 # Default target (prepare and build all services)
-all: prepare build
+all: build
 
-# Prepare: Copy shared requirements.txt to each service directory
-prepare:
-	@for service in $(SERVICES); do \
-		echo "Preparing $$service service..."; \
-		cp requirements.txt ./services/$$service/requirements.txt; \
-	done
-
-# Build Docker images for all services
+# Build Docker image for server.py
 build:
 	@for service in $(SERVICES); do \
 		echo "Building $$service service..."; \
-		docker build -t $(DOCKER_USERNAME)/$$service-service:$(VERSION) -f ./services/$$service/Dockerfile .; \
+		docker build -t $(DOCKER_USERNAME)/$$service:$(VERSION) -f ./Dockerfile .; \
 	done
 
-# Push Docker images for all services to Docker Hub
+# Push Docker images for server to Docker Hub
 push:
 	@for service in $(SERVICES); do \
 		echo "Pushing $$service service..."; \
-		docker push $(DOCKER_USERNAME)/$$service-service:$(VERSION); \
+		docker push $(DOCKER_USERNAME)/$$service:$(VERSION); \
 	done
 
+# Clean up dangling images and Docker cache
 clean:
 	@echo "Cleaning up dangling Docker images..."
 	@if [ "$(docker images -f "dangling=true" -q)" ]; then \
@@ -51,5 +45,21 @@ clean:
 	@echo "Cleaning up Docker build cache..."
 	docker builder prune -f
 
-# Build and Push Docker images
-deploy: prepare build push
+# Build and Push Docker image for server.py
+deploy: build push
+
+# Remove containers, images, and volumes
+reset:
+	@echo "Stopping and removing all containers..."
+	@docker stop $$(docker ps -aq) || true
+	@docker rm $$(docker ps -aq) || true
+	@echo "Removing all Docker images..."
+	@if [ "$(docker images -aq)" ]; then \
+		docker rmi -f $$(docker images -aq) || true; \
+	else \
+		echo "No Docker images to clean."; \
+	fi
+	@echo "Pruning Docker volumes..."
+	docker volume prune -f || true
+	@echo "Pruning Docker networks..."
+	docker network prune -f || true

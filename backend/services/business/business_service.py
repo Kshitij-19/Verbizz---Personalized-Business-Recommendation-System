@@ -1,30 +1,24 @@
-from concurrent import futures
-import grpc
 from codegen import business_service_pb2 as pb2
 from codegen import business_service_pb2_grpc as pb2_grpc
-from kafka import KafkaProducer
-import json
-from concurrent import futures
+import grpc
 
-from db.db import Database
-
-# Initialize database connection
-db = Database(db_name="postgres", user="postgres", password="rootpass123")
-print("db info", db)
-
-# Initialize Kafka producer
-producer = KafkaProducer(
-    bootstrap_servers='localhost:9092',
-    value_serializer=lambda v: json.dumps(v).encode('utf-8')
-)
 
 class BusinessService(pb2_grpc.BusinessServiceServicer):
+    def __init__(self, db, kafka_producer):
+        """
+        Constructor for BusinessService.
+
+        :param db: Database connection instance
+        :param kafka_producer: KafkaProducer instance
+        """
+        self.db = db
+        self.kafka_producer = kafka_producer
 
     def GetBusiness(self, request, context):
         query = """
         SELECT * FROM Business WHERE id = %s
         """
-        business = db.fetch_one(query, (request.id,))
+        business = self.db.fetch_one(query, (request.id,))
         if not business:
             context.set_code(grpc.StatusCode.NOT_FOUND)
             context.set_details('Business not found')
@@ -59,7 +53,7 @@ class BusinessService(pb2_grpc.BusinessServiceServicer):
             WHERE businessid = %s OR 
                 (name = %s AND address = %s AND city = %s AND state = %s AND country = %s)
             """
-            existing_business = db.fetch_one(check_query, (
+            existing_business = self.db.fetch_one(check_query, (
                 request.businessid, request.name, request.address, request.city, request.state, request.country
             ))
 
@@ -76,7 +70,7 @@ class BusinessService(pb2_grpc.BusinessServiceServicer):
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             RETURNING id
             """
-            business_id = db.fetch_one(query, (
+            business_id = self.db.fetch_one(query, (
                 request.businessid, request.name, request.rating, request.review_count, request.address,
                 request.category, request.city, request.state, request.country, request.zip_code,
                 request.latitude, request.longitude, request.phone, request.price, request.image_url,
@@ -96,7 +90,7 @@ class BusinessService(pb2_grpc.BusinessServiceServicer):
                     "city": request.city,
                     "price": request.price
                 }
-                producer.send('new-business-data', value=new_business)
+                self.kafka_producer.send('new-business-data', value=new_business)
                 print(f"New business sent to Kafka: {new_business}")
             except Exception as e:
                 context.set_code(grpc.StatusCode.INTERNAL)
@@ -134,7 +128,7 @@ class BusinessService(pb2_grpc.BusinessServiceServicer):
         query = """
         SELECT * FROM Business WHERE name = %s
         """
-        business = db.fetch_one(query, (request.name,))
+        business = self.db.fetch_one(query, (request.name,))
         if not business:
             context.set_code(grpc.StatusCode.NOT_FOUND)
             context.set_details('Business not found')
@@ -169,7 +163,7 @@ class BusinessService(pb2_grpc.BusinessServiceServicer):
             FROM Business
             WHERE earth_box(ll_to_earth(%s, %s), %s) @> ll_to_earth(latitude, longitude) LIMIT 3
             """
-            businesses = db.fetch_all(query, (request.latitude, request.longitude, request.radius * 1000))  # radius in meters
+            businesses = self.db.fetch_all(query, (request.latitude, request.longitude, request.radius * 1000))  # radius in meters
 
             if not businesses:
                 context.set_code(grpc.StatusCode.NOT_FOUND)
@@ -207,7 +201,7 @@ class BusinessService(pb2_grpc.BusinessServiceServicer):
 
     def GetBusinessByCategory(self, request, context):
         query = "SELECT * FROM Business WHERE category ILIKE %s  LIMIT 3"
-        businesses = db.fetch_all(query, (f"%{request.category}%",))
+        businesses = self.db.fetch_all(query, (f"%{request.category}%",))
         if not businesses:
             context.set_code(grpc.StatusCode.NOT_FOUND)
             context.set_details('No businesses found in the specified category')
@@ -219,7 +213,7 @@ class BusinessService(pb2_grpc.BusinessServiceServicer):
 
     def GetBusinessByRating(self, request, context):
         query = "SELECT * FROM Business WHERE rating >= %s  LIMIT 3"
-        businesses = db.fetch_all(query, (request.min_rating,))
+        businesses = self.db.fetch_all(query, (request.min_rating,))
         if not businesses:
             context.set_code(grpc.StatusCode.NOT_FOUND)
             context.set_details('No businesses found with the specified rating')
@@ -237,7 +231,7 @@ class BusinessService(pb2_grpc.BusinessServiceServicer):
             ORDER BY calculated_distance ASC
             LIMIT %s
             """
-            businesses = db.fetch_all(query, (request.latitude, request.longitude, request.limit))
+            businesses = self.db.fetch_all(query, (request.latitude, request.longitude, request.limit))
 
             if not businesses:
                 context.set_code(grpc.StatusCode.NOT_FOUND)
@@ -277,7 +271,7 @@ class BusinessService(pb2_grpc.BusinessServiceServicer):
 
     def GetTrendingBusinesses(self, request, context):
         query = "SELECT * FROM Business ORDER BY review_count DESC LIMIT 3"
-        businesses = db.fetch_all(query)
+        businesses = self.db.fetch_all(query)
         if not businesses:
             context.set_code(grpc.StatusCode.NOT_FOUND)
             context.set_details('No trending businesses found')

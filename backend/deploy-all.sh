@@ -1,10 +1,12 @@
 #!/bin/bash
 
-# Deploy all services
-kubectl apply -f services/business/business_service_deployment.yaml --validate=false
-kubectl apply -f services/recommendation/recommendation_deployment.yaml --validate=false
-kubectl apply -f services/user/user_service_deployment.yaml --validate=false
+# Deploy the gRPC server service
+kubectl apply -f grpc-server-deployment.yaml --validate=false
+
+# Deploy Redis service
 kubectl apply -f redis/redis_deployment.yaml --validate=false
+
+# Deploy Kafka service
 kubectl apply -f kafka/kafka_deployment.yaml --validate=false
 
 echo "All deployments applied successfully!"
