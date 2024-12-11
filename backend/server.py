@@ -13,6 +13,8 @@ from db.db import Database
 from joblib import load
 from kafka import KafkaProducer
 import json
+from grpc_health.v1 import health, health_pb2, health_pb2_grpc
+import logging
 
 # Load environment variables
 load_dotenv()
@@ -29,6 +31,12 @@ DB_PORT = int(os.getenv('DB_PORT', 5432))
 DATA_FILE = "data/data.pkl"
 SIMILARITY_MATRIX_FILE = "data/similarity_matrix.pkl"
 
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,  # Set to logging.DEBUG for more detailed logs
+    format='%(asctime)s - %(levelname)s - %(message)s'
+)
+
 # Global resources
 redis_client = None
 db = None
@@ -43,6 +51,7 @@ def initialize_resources():
     global redis_client, db, data, similarity_matrix, kafka_producer
 
     # Initialize Redis
+    logging.info("Initializing Redis...")
     try:
         redis_client = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, decode_responses=False)
         redis_client.ping()
@@ -52,6 +61,7 @@ def initialize_resources():
         redis_client = None
 
     # Initialize Database
+    logging.info("Initializing Database...")
     try:
         db = Database(db_name=DB_NAME, user=DB_USER, password=DB_PASSWORD, host=DB_HOST, port=DB_PORT)
         print(f"Connected to Database at {DB_HOST}:{DB_PORT}")
@@ -59,7 +69,9 @@ def initialize_resources():
         print(f"Error connecting to Database: {e}")
         db = None
 
+    logging.info("Database... connected")
     # Load data and similarity matrix
+    logging.info("Loading data and similarity matrix from files...")
     try:
         print("Loading data and similarity matrix from files...")
         data = load(DATA_FILE)
@@ -75,14 +87,18 @@ def initialize_resources():
         similarity_matrix = None
 
         # Initialize Kafka Producer
+    logging.info("Data and similarity matrix loaded successfully.")
+
+
     try:
         kafka_producer = KafkaProducer(
             bootstrap_servers=KAFKA_BOOTSTRAP_SERVERS,
             value_serializer=lambda v: json.dumps(v).encode('utf-8')
         )
-        print(f"Connected to Kafka at {KAFKA_BOOTSTRAP_SERVERS}")
+        logging.info(f"Connected to Kafka at {KAFKA_BOOTSTRAP_SERVERS}")
     except Exception as e:
         print(f"Error connecting to Kafka: {e}")
+        logging.info("Error connecting to Kafka: {e}")
         kafka_producer = None
 
 
@@ -94,12 +110,14 @@ def serve():
 
     if not db or not redis_client or data is None or similarity_matrix is None or data.empty:
         print("Failed to initialize all resources. Exiting...")
+        logging.info("Failed to initialize all resources. Exiting...")
         return
 
     # Start Kafka consumer in a separate thread
     consumer_thread = threading.Thread(target=consume_business_messages, daemon=True)
     consumer_thread.start()
     print("Kafka consumer thread started...")
+    logging.info("Kafka consumer thread started...")
 
     # Create the gRPC server
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
@@ -116,9 +134,16 @@ def serve():
     user_service = UserService(db=db)
     user_service_pb2_grpc.add_UserServiceServicer_to_server(user_service, server)
 
+    # Add Health Checking Service
+    health_service = health.HealthServicer()
+    health_pb2_grpc.add_HealthServicer_to_server(health_service, server)
+
+    # Set the health status of the services
+    health_service.set('', health_pb2.HealthCheckResponse.SERVING)
+
     # Bind server to port 50051
     server.add_insecure_port('[::]:50051')
-    print("gRPC server is running on port 50051 with multiple services...")
+    logging.info("gRPC server is running on port 50051 with health checks...")
 
     # Start the server
     server.start()

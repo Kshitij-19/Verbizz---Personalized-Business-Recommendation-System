@@ -1,3 +1,5 @@
+import logging
+
 from codegen import business_service_pb2 as pb2
 from codegen import business_service_pb2_grpc as pb2_grpc
 import grpc
@@ -66,15 +68,15 @@ class BusinessService(pb2_grpc.BusinessServiceServicer):
             query = """
             INSERT INTO Business (businessid, name, rating, review_count, address, category, 
                                 city, state, country, zip_code, latitude, longitude, 
-                                phone, price, image_url, url, distance, business_hours)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                                phone, price, image_url, url, distance)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             RETURNING id
             """
             business_id = self.db.fetch_one(query, (
                 request.businessid, request.name, request.rating, request.review_count, request.address,
                 request.category, request.city, request.state, request.country, request.zip_code,
                 request.latitude, request.longitude, request.phone, request.price, request.image_url,
-                request.url, request.distance, request.business_hours
+                request.url, request.distance
             ))
 
             # Send the new business data to Kafka
@@ -90,11 +92,13 @@ class BusinessService(pb2_grpc.BusinessServiceServicer):
                     "city": request.city,
                     "price": request.price
                 }
+                logging.info(f'new_business: {new_business}')
                 self.kafka_producer.send('new-business-data', value=new_business)
                 print(f"New business sent to Kafka: {new_business}")
             except Exception as e:
                 context.set_code(grpc.StatusCode.INTERNAL)
                 context.set_details(f"Failed to send business to Kafka: {str(e)}")
+                logging.info(f"Failed to send business to Kafka: {str(e)}")
                 return pb2.BusinessResponse()
 
             return pb2.BusinessResponse(

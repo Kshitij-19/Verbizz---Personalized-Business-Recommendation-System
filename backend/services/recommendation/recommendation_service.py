@@ -1,6 +1,7 @@
 import grpc
 from codegen import recommendation_service_pb2 as pb2
 from codegen import recommendation_service_pb2_grpc as pb2_grpc
+import logging
 
 
 class RecommendationService(pb2_grpc.RecommendationServiceServicer):
@@ -25,6 +26,7 @@ class RecommendationService(pb2_grpc.RecommendationServiceServicer):
         if self.data is None or self.similarity_matrix is None:
             context.set_code(grpc.StatusCode.INTERNAL)
             context.set_details("Data or similarity matrix not loaded.")
+            logging.info("Data or similarity matrix not loaded.")
             return pb2.RecommendationResponse()
 
         # Validate input
@@ -38,9 +40,11 @@ class RecommendationService(pb2_grpc.RecommendationServiceServicer):
         cached_recommendations = self.redis_client.get(cache_key)
         if cached_recommendations:
             print(f"Cache hit for key: {cache_key}")
+            logging.info(f"Cache hit for key: {cache_key}")
             return pb2.RecommendationResponse.FromString(cached_recommendations)
 
         print(f"Cache miss for key: {cache_key}")
+        logging.info(f"Cache miss for key: {cache_key}")
 
         # Get the maximum review count dynamically from the database
         try:
@@ -48,6 +52,7 @@ class RecommendationService(pb2_grpc.RecommendationServiceServicer):
             max_review_result = self.db.fetch_one(max_review_query)
             max_review_count = max_review_result['max_review_count'] if max_review_result else 1
             print(f"Max review count dynamically fetched: {max_review_count}")
+            logging.info(f"Max review count dynamically fetched: {max_review_count}")
         except Exception as e:
             context.set_code(grpc.StatusCode.INTERNAL)
             context.set_details(f"Error fetching max review count: {str(e)}")
@@ -66,9 +71,12 @@ class RecommendationService(pb2_grpc.RecommendationServiceServicer):
             (self.data['price'] == request.price)
         ]
 
+        logging.info(f'Filtered data: {filtered_data}')
+
         if filtered_data.empty:
             context.set_code(grpc.StatusCode.NOT_FOUND)
             context.set_details("No businesses match the given preferences.")
+            logging.info("No businesses match the given preferences.")
             return pb2.RecommendationResponse()
 
         # Use the first matching business for recommendation
