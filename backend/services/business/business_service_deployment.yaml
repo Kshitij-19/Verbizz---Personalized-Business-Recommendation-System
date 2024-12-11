@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: business-service
+  labels:
+    app: business-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: business-service
+  template:
+    metadata:
+      labels:
+        app: business-service
+    spec:
+      containers:
+      - name: business-service
+        image: dkiran760/business-service:latest # Replace with your image
+        ports:
+        - containerPort: 50052
+        env:
+        - name: KAFKA_BOOTSTRAP_SERVERS
+          value: "kafka-service:9092"
+        readinessProbe:
+          httpGet:
+            path: /health  # Replace with your health endpoint
+            port: 50052
+          initialDelaySeconds: 5  # Delay before the first probe
+          periodSeconds: 10       # Probe frequency
+        livenessProbe:
+            httpGet:
+              path: /health  # Replace with your health endpoint
+              port: 50052
+            initialDelaySeconds: 15 # Delay before the first liveness check
+            periodSeconds: 20       # Frequency of liveness checks
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: business-service
+spec:
+  selector:
+    app: business-service
+  ports:
+  - protocol: TCP
+    port: 50052
+    targetPort: 50052
+  type: ClusterIP
