@@ -25,11 +25,11 @@ KAFKA_BOOTSTRAP_SERVERS = os.getenv('KAFKA_BOOTSTRAP_SERVERS', 'kafka-service:90
 DB_NAME = os.getenv('DB_NAME', 'postgres')
 DB_USER = os.getenv('DB_USER', 'postgres')
 DB_PASSWORD = os.getenv('DB_PASSWORD', 'rootpass123')
-DB_HOST = os.getenv('DB_HOST', 'localhost')
+DB_HOST = os.getenv('DB_HOST', 'localhost') #postgres-service for docker
 DB_PORT = int(os.getenv('DB_PORT', 5432))
 
-DATA_FILE = "data/data.pkl"
-SIMILARITY_MATRIX_FILE = "data/similarity_matrix.pkl"
+DATA_FILE = "data/full_data.pkl"
+VECTORIZER_FILE = "data/tfidf_vectorizer.pkl"
 
 # Configure logging
 logging.basicConfig(
@@ -41,14 +41,14 @@ logging.basicConfig(
 redis_client = None
 db = None
 data = None
-similarity_matrix = None
+vectorizer = None
 kafka_producer = None
 
 def initialize_resources():
     """
     Initializes global resources like Redis, database connection, and data files.
     """
-    global redis_client, db, data, similarity_matrix, kafka_producer
+    global redis_client, db, data, vectorizer, kafka_producer
 
     # Initialize Redis
     logging.info("Initializing Redis...")
@@ -70,24 +70,24 @@ def initialize_resources():
         db = None
 
     logging.info("Database... connected")
-    # Load data and similarity matrix
-    logging.info("Loading data and similarity matrix from files...")
+    # Load data and vectorizer
+    logging.info("Loading data and vectorizer from files...")
     try:
-        print("Loading data and similarity matrix from files...")
+        print("Loading data and vectorizer from files...")
         data = load(DATA_FILE)
-        similarity_matrix = load(SIMILARITY_MATRIX_FILE)
+        vectorizer = load(VECTORIZER_FILE)
         print("Data and similarity matrix loaded successfully.")
     except FileNotFoundError:
-        print("Data files not found. Ensure that `data.pkl` and `similarity_matrix.pkl` exist.")
+        print("Data files not found. Ensure that `data.pkl` and `vectorizer.pkl` exist.")
         data = None
-        similarity_matrix = None
+        vectorizer = None
     except Exception as e:
-        print(f"Unexpected error loading data or similarity matrix: {e}")
+        print(f"Unexpected error loading data or vectorizer: {e}")
         data = None
-        similarity_matrix = None
+        vectorizer = None
 
         # Initialize Kafka Producer
-    logging.info("Data and similarity matrix loaded successfully.")
+    logging.info("Data and vectorizer loaded successfully.")
 
 
     try:
@@ -108,7 +108,9 @@ def serve():
     """
     initialize_resources()
 
-    if not db or not redis_client or data is None or similarity_matrix is None or data.empty:
+    logging.info(f"Kafka producer started  {kafka_producer}")
+
+    if not db or not redis_client or data is None or vectorizer is None or data.empty:
         print("Failed to initialize all resources. Exiting...")
         logging.info("Failed to initialize all resources. Exiting...")
         return
@@ -127,11 +129,11 @@ def serve():
     business_service_pb2_grpc.add_BusinessServiceServicer_to_server(business_service, server)
 
     # Add RecommendationService to the server
-    recommendation_service = RecommendationService(db=db, redis_client=redis_client, data=data, similarity_matrix=similarity_matrix)
+    recommendation_service = RecommendationService(db=db, redis_client=redis_client, data=data, vectorizer=vectorizer)
     recommendation_service_pb2_grpc.add_RecommendationServiceServicer_to_server(recommendation_service, server)
 
     # Add UserService to the server
-    user_service = UserService(db=db)
+    user_service = UserService(db=db, redis_client=redis_client, recommendation_service=recommendation_service)
     user_service_pb2_grpc.add_UserServiceServicer_to_server(user_service, server)
 
     # Add Health Checking Service

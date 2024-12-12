@@ -64,6 +64,8 @@ class BusinessService(pb2_grpc.BusinessServiceServicer):
                 context.set_details('Business with this ID or similar details already exists')
                 return pb2.BusinessResponse()
 
+            logging.info('Hello1')
+
             # Insert new business if no duplicate exists
             query = """
             INSERT INTO Business (businessid, name, rating, review_count, address, category, 
@@ -72,13 +74,16 @@ class BusinessService(pb2_grpc.BusinessServiceServicer):
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             RETURNING id
             """
+            logging.info('Hello2')
             business_id = self.db.fetch_one(query, (
                 request.businessid, request.name, request.rating, request.review_count, request.address,
                 request.category, request.city, request.state, request.country, request.zip_code,
                 request.latitude, request.longitude, request.phone, request.price, request.image_url,
                 request.url, request.distance
             ))
+            logging.info(f'Business ID: {business_id}')
 
+            logging.info('Hello3')
             # Send the new business data to Kafka
             try:
                 new_business = {

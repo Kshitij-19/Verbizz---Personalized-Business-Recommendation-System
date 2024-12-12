@@ -38,7 +38,7 @@ def test_add_business():
             stub = pb2_grpc.BusinessServiceStub(channel)
             response = stub.AddBusiness(pb2.NewBusinessRequest(
                 businessid=unique_businessid,
-                name="Mexican Cafe",
+                name="Test Cafe",
                 rating=4.5,
                 review_count=550,
                 address="128 Main Street",
@@ -75,7 +75,7 @@ def test_register_user():
                 email="testuser@example.com",
                 password="securepassword123",
                 name="Test User",
-                preferences='{"category": ["Cafe", "Restaurant"], "location": "New York"}'
+                preferences='{"category": ["Cafe", "Korean"], "city": "New York"}'
             ))
             print("RegisterUser Response:", response)
     except grpc.RpcError as e:
@@ -231,10 +231,10 @@ def test_get_recommendations():
             stub = rec_pb2_grpc.RecommendationServiceStub(channel)
             # Example: Recommendation request
             request = rec_pb2.RecommendationRequest(
-                category="Cafe",
+                category=["Korean", "Tapas/Small Plates"],
                 city="New York",
-                min_rating=4.0,
-                min_review_count=200,
+                min_rating=4.5,
+                min_review_count=120,
                 price="$$"
             )
             response = stub.GetRecommendations(request)
@@ -259,8 +259,8 @@ def test_get_recommendations():
 
 
 if __name__ == "__main__":
-    print("Testing AddBusiness RPC:")
-    test_add_business()
+    # print("Testing AddBusiness RPC:")
+    # test_add_business()
     #
     # print("\nTesting GetBusiness RPC:")
     # test_get_business()
@@ -286,8 +286,8 @@ if __name__ == "__main__":
     # print("Testing RegisterUser RPC:")
     # test_register_user()
     #
-    # print("\nTesting LoginUser RPC:")
-    # token, user_id = test_login_user()
+    print("\nTesting LoginUser RPC:")
+    test_login_user()
     #
     # if token:
     #     print("\nTesting GetUserProfile RPC:")
@@ -298,6 +298,6 @@ if __name__ == "__main__":
     #
     #     print("\nTesting DeleteUser RPC:")
     #     test_delete_user(token)
-
+    # #
     # print("\nTesting GetRecommendations RPC:")
     # test_get_recommendations()
