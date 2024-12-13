@@ -111,7 +111,7 @@ class UserService(user_pb2_grpc.UserServiceServicer):
         """
         try:
             # Fetch user from the database
-            query = "SELECT id, password_hash, preferences, preferences_collected FROM Users WHERE email = %s"
+            query = "SELECT id,name, password_hash, preferences, preferences_collected FROM Users WHERE email = %s"
             user = self.db.fetch_one(query, (request.email,))
             if not user:
                 logging.error("User not found.")
@@ -150,7 +150,8 @@ class UserService(user_pb2_grpc.UserServiceServicer):
                     success=True,
                     token=token,
                     user_id=user["id"],
-                    preferences=json.dumps(preferences)
+                    preferences=json.dumps(preferences),
+                    name=user["name"],
                 )
 
 
@@ -170,6 +171,7 @@ class UserService(user_pb2_grpc.UserServiceServicer):
                         user_id=user["id"],
                         preferences=json.dumps(preferences),
                         recommendations=cached_recommendations,  # Cached recommendations
+                        name=user["name"],
                     )
 
             # Fetch recommendations if not cached
@@ -211,6 +213,7 @@ class UserService(user_pb2_grpc.UserServiceServicer):
                 user_id=user["id"],
                 preferences=json.dumps(preferences),
                 recommendations=serialized_recommendations,
+                name=user["name"],
             )
         except grpc.RpcError as e:
             logging.error(f"Error calling Recommendation Service: {e.details()}")
@@ -223,6 +226,7 @@ class UserService(user_pb2_grpc.UserServiceServicer):
                 user_id=user["id"],
                 preferences=json.dumps(preferences),
                 recommendations="[]",
+                name=user["name"],
             )
         except Exception as e:
             logging.error(f"Error during login: {str(e)}")
@@ -277,3 +281,118 @@ class UserService(user_pb2_grpc.UserServiceServicer):
             context.set_code(grpc.StatusCode.INTERNAL)
             context.set_details('Internal server error')
             return user_pb2.DeleteUserResponse(message="Delete failed", success=False)
+
+    def UpdatePreferences(self, request, context):
+        """
+        Updates user preferences, generates new recommendations if needed, and manages caching appropriately.
+        """
+        try:
+            logging.info("Updating preferences... backend")
+            logging.info(f"Request received: {request}")
+
+            # Fetch the existing preferences for the user from the database
+            query = "SELECT preferences FROM Users WHERE id = %s"
+            existing_user = self.db.fetch_one(query, (request.user_id,))
+            if not existing_user:
+                logging.warning(f"User not found for user_id: {request.user_id}")
+                context.set_code(grpc.StatusCode.NOT_FOUND)
+                context.set_details("User not found.")
+                return user_pb2.UpdatePreferencesResponse(
+                    message="User not found.",
+                    success=False,
+                    recommendations="[]"
+                )
+
+            # Parse the existing preferences
+            existing_preferences = existing_user["preferences"]
+            if isinstance(existing_preferences, str):
+                existing_preferences = json.loads(existing_preferences)
+            logging.info(f"Parsed existing preferences: {existing_preferences}")
+
+            # Create a dictionary from the incoming preferences
+            new_preferences = {
+                "category": list(request.category),
+                "city": request.city
+            }
+            logging.info(f"New preferences: {new_preferences}")
+
+            # Check if preferences have changed
+            if existing_preferences == new_preferences:
+                logging.info("Preferences unchanged. Checking cache for recommendations.")
+                cache_key = f"recommendations:{' '.join(request.category).lower()}:{request.city.lower()}"
+                redis_client = self.redis_client
+
+                if redis_client:
+                    cached_recommendations = redis_client.get(cache_key)
+                    if cached_recommendations:
+                        logging.info("Returning cached recommendations.")
+                        return user_pb2.UpdatePreferencesResponse(
+                            message="Preferences unchanged. Returning cached recommendations.",
+                            success=True,
+                            recommendations=cached_recommendations.decode("utf-8")
+                        )
+                logging.info("No cached recommendations found.")
+
+            # Update preferences in the database
+            preferences_json = json.dumps(new_preferences)
+            update_query = "UPDATE Users SET preferences = %s WHERE id = %s"
+            self.db.execute(update_query, (preferences_json, request.user_id))
+            logging.info(f"Preferences updated in the database for user_id {request.user_id}.")
+
+            # Invalidate the cache for the old recommendations
+            cache_key = f"recommendations:{' '.join(request.category).lower()}:{request.city.lower()}"
+            if self.redis_client:
+                logging.info(f"Invalidating cache for key: {cache_key}")
+                self.redis_client.delete(cache_key)
+
+            # Fetch new recommendations from the recommendation service
+            rec_request = rec_pb2.RecommendationRequest(
+                category=request.category,
+                city=request.city
+            )
+            response = self.recommendation_service.GetRecommendations(rec_request, context)
+            logging.info(f"Recommendations fetched: {response}")
+
+            # Prepare recommendations for response
+            recommendations = [
+                {
+                    "name": rec.name,
+                    "category": rec.category,
+                    "rating": rec.rating,
+                    "review_count": rec.review_count,
+                    "city": rec.city,
+                    "address": rec.address,
+                    "phone": rec.phone,
+                    "price": rec.price,
+                    "image_url": rec.image_url,
+                    "url": rec.url,
+                }
+                for rec in response.recommendations
+            ]
+            serialized_recommendations = json.dumps(recommendations)
+            logging.info(f"Serialized recommendations: {serialized_recommendations}")
+
+            return user_pb2.UpdatePreferencesResponse(
+                message="Preferences updated successfully.",
+                success=True,
+                recommendations=serialized_recommendations
+            )
+
+        except grpc.RpcError as e:
+            logging.error(f"gRPC error while fetching recommendations: {e.details()}")
+            context.set_code(grpc.StatusCode.INTERNAL)
+            context.set_details("Failed to fetch new recommendations.")
+            return user_pb2.UpdatePreferencesResponse(
+                message="Failed to update preferences.",
+                success=False,
+                recommendations="[]"
+            )
+        except Exception as e:
+            logging.error(f"Error during preference update: {str(e)}")
+            context.set_code(grpc.StatusCode.INTERNAL)
+            context.set_details("Internal server error.")
+            return user_pb2.UpdatePreferencesResponse(
+                message="Failed to update preferences.",
+                success=False,
+                recommendations="[]"
+            )

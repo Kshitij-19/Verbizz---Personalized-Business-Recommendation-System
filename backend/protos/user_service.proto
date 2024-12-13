@@ -10,6 +10,7 @@ service UserService {
   rpc UpdateUserProfile (UpdateUserProfileRequest) returns (UpdateUserProfileResponse);
   rpc DeleteUser (DeleteUserRequest) returns (DeleteUserResponse);
   rpc GetUserRecommendations(GetUserRecommendationsRequest) returns (GetUserRecommendationsResponse);
+  rpc UpdatePreferences(UpdatePreferencesRequest) returns (UpdatePreferencesResponse);
 }
 
 // Request and response for RegisterUser
@@ -39,6 +40,7 @@ message LoginUserResponse {
     int32 user_id = 4; // Add user_id to the response
     string recommendations = 5; // Optional field for returning recommendation
     string preferences = 6;
+    string name = 7;
 }
 
 // Request and response for GetUserProfile
@@ -94,4 +96,16 @@ message Recommendation {
 
 message GetUserRecommendationsResponse {
     repeated Recommendation recommendations = 1;
+}
+
+message UpdatePreferencesRequest {
+    int32 user_id = 1;
+    repeated string category = 2;
+    string city = 3;
+}
+
+message UpdatePreferencesResponse {
+    string message = 1;
+    bool success = 2;
+    string recommendations = 3; // New recommendations based on updated preferences
 }
