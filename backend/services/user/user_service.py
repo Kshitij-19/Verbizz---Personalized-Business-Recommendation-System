@@ -7,6 +7,15 @@ from codegen import recommendation_service_pb2 as rec_pb2
 import grpc
 import json
 import logging
+from kafka import KafkaConsumer
+
+# Initialize Kafka consumer
+consumer = KafkaConsumer(
+    'preferences_update',
+    bootstrap_servers='localhost:9092',  # Update with your Kafka broker address
+    value_deserializer=lambda v: json.loads(v.decode('utf-8')),
+    group_id='recommendation-service'
+)
 
 
 SECRET_KEY = os.getenv("JWT_SECRET_KEY", "fallback-secret-key")

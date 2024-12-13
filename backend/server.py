@@ -9,6 +9,7 @@ from services.business.business_service import BusinessService
 from services.recommendation.recommendation_service import RecommendationService
 from services.user.user_service import UserService
 from consumers.business_consumer import consume_business_messages
+from consumers.update_preferences_consumer import start_kafka_consumer
 from db.db import Database
 from joblib import load
 from kafka import KafkaProducer
@@ -115,12 +116,6 @@ def serve():
         logging.info("Failed to initialize all resources. Exiting...")
         return
 
-    # Start Kafka consumer in a separate thread
-    consumer_thread = threading.Thread(target=consume_business_messages, daemon=True)
-    consumer_thread.start()
-    print("Kafka consumer thread started...")
-    logging.info("Kafka consumer thread started...")
-
     # Create the gRPC server
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
 
@@ -131,6 +126,17 @@ def serve():
     # Add RecommendationService to the server
     recommendation_service = RecommendationService(db=db, redis_client=redis_client, data=data, vectorizer=vectorizer)
     recommendation_service_pb2_grpc.add_RecommendationServiceServicer_to_server(recommendation_service, server)
+
+
+    # Start Kafka consumer in a separate thread
+    consumer_thread = threading.Thread(
+        target=start_kafka_consumer,
+        args=(redis_client, db, recommendation_service),
+        daemon=True
+    )
+    consumer_thread.start()
+    print("Kafka consumer thread started...")
+
 
     # Add UserService to the server
     user_service = UserService(db=db, redis_client=redis_client, recommendation_service=recommendation_service)
