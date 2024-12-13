@@ -38,22 +38,22 @@ def test_add_business():
             stub = pb2_grpc.BusinessServiceStub(channel)
             response = stub.AddBusiness(pb2.NewBusinessRequest(
                 businessid=unique_businessid,
-                name="Italian Cafe",
-                rating=4.3,
-                review_count=150,
-                address="931 Main Street",
+                name="Test Cafe",
+                rating=4.5,
+                review_count=550,
+                address="128 Main Street",
                 category="Cafe",
-                city="New York",
-                state="NY",
+                city="Boulder",
+                state="CO",
                 country="USA",
-                zip_code="13204",
-                latitude=80.7126,
-                longitude=-14.0060,
-                phone="485-456-4830",
-                price="$$$",
-                image_url="http://example1.com/image1.jpg",
-                url="http://example1.com",
-                distance=2
+                zip_code="85884",
+                latitude=77.7126,
+                longitude=-24.0060,
+                phone="685-456-4830",
+                price="$$",
+                image_url="http://example2.com/image2.jpg",
+                url="http://example2.com",
+                distance=1
             ))
             print("Added Business:")
             print(f"  ID: {response.id}")
@@ -75,7 +75,7 @@ def test_register_user():
                 email="testuser@example.com",
                 password="securepassword123",
                 name="Test User",
-                preferences='{"category": ["Cafe", "Restaurant"], "location": "New York"}'
+                preferences='{"category": ["Cafe", "Korean"], "city": "New York"}'
             ))
             print("RegisterUser Response:", response)
     except grpc.RpcError as e:
@@ -231,10 +231,10 @@ def test_get_recommendations():
             stub = rec_pb2_grpc.RecommendationServiceStub(channel)
             # Example: Recommendation request
             request = rec_pb2.RecommendationRequest(
-                category="Cafe",
+                category=["Korean", "Tapas/Small Plates"],
                 city="New York",
-                min_rating=4.0,
-                min_review_count=200,
+                min_rating=4.5,
+                min_review_count=120,
                 price="$$"
             )
             response = stub.GetRecommendations(request)
@@ -259,45 +259,45 @@ def test_get_recommendations():
 
 
 if __name__ == "__main__":
-    print("Testing AddBusiness RPC:")
-    test_add_business()
-
-    print("\nTesting GetBusiness RPC:")
-    test_get_business()
-
-    print("\nTesting GetBusinessByName RPC:")
-    test_get_business_by_name()
-
-    print("\nTesting GetBusinessByLocation RPC:")
-    test_get_business_by_location()
-
-    print("\nTesting GetBusinessByCategory RPC:")
-    test_get_business_by_category()
-
-    print("\nTesting GetBusinessByRating RPC:")
-    test_get_business_by_rating()
-
-    print("\nTesting GetBusinessByProximity RPC:")
-    test_get_business_by_proximity()
-
-    print("\nTesting GetTrendingBusinesses RPC:")
-    test_get_trending_businesses()
-
-    print("Testing RegisterUser RPC:")
-    test_register_user()
-
+    # print("Testing AddBusiness RPC:")
+    # test_add_business()
+    #
+    # print("\nTesting GetBusiness RPC:")
+    # test_get_business()
+    #
+    # print("\nTesting GetBusinessByName RPC:")
+    # test_get_business_by_name()
+    #
+    # print("\nTesting GetBusinessByLocation RPC:")
+    # test_get_business_by_location()
+    #
+    # print("\nTesting GetBusinessByCategory RPC:")
+    # test_get_business_by_category()
+    #
+    # print("\nTesting GetBusinessByRating RPC:")
+    # test_get_business_by_rating()
+    #
+    # print("\nTesting GetBusinessByProximity RPC:")
+    # test_get_business_by_proximity()
+    #
+    # print("\nTesting GetTrendingBusinesses RPC:")
+    # test_get_trending_businesses()
+    #
+    # print("Testing RegisterUser RPC:")
+    # test_register_user()
+    #
     print("\nTesting LoginUser RPC:")
-    token, user_id = test_login_user()
-
-    if token:
-        print("\nTesting GetUserProfile RPC:")
-        test_get_user_profile(token, user_id)
-
-        print("\nTesting UpdateUserProfile RPC:")
-        test_update_user_profile(token)
-
-        print("\nTesting DeleteUser RPC:")
-        test_delete_user(token)
-
-    print("\nTesting GetRecommendations RPC:")
-    test_get_recommendations()
+    test_login_user()
+    #
+    # if token:
+    #     print("\nTesting GetUserProfile RPC:")
+    #     test_get_user_profile(token, user_id)
+    #
+    #     print("\nTesting UpdateUserProfile RPC:")
+    #     test_update_user_profile(token)
+    #
+    #     print("\nTesting DeleteUser RPC:")
+    #     test_delete_user(token)
+    # #
+    # print("\nTesting GetRecommendations RPC:")
+    # test_get_recommendations()

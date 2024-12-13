@@ -7,7 +7,7 @@ DOCKER_USERNAME := $(DOCKER_USERNAME)
 VERSION ?= latest
 
 # Services list (for modular builds, if needed in the future)
-SERVICES := server
+SERVICES := grpc-server
 
 # Default target (prepare and build all services)
 all: build
@@ -16,7 +16,7 @@ all: build
 build:
 	@for service in $(SERVICES); do \
 		echo "Building $$service service..."; \
-		docker build -t $(DOCKER_USERNAME)/$$service:$(VERSION) -f ./Dockerfile .; \
+		docker build -t $(DOCKER_USERNAME)/$$service:$(VERSION) .; \
 	done
 
 # Push Docker images for server to Docker Hub

@@ -9,6 +9,7 @@ service UserService {
   rpc GetUserProfile (GetUserProfileRequest) returns (GetUserProfileResponse);
   rpc UpdateUserProfile (UpdateUserProfileRequest) returns (UpdateUserProfileResponse);
   rpc DeleteUser (DeleteUserRequest) returns (DeleteUserResponse);
+  rpc GetUserRecommendations(GetUserRecommendationsRequest) returns (GetUserRecommendationsResponse);
 }
 
 // Request and response for RegisterUser
@@ -71,4 +72,25 @@ message DeleteUserRequest {
 message DeleteUserResponse {
   string message = 1;
   bool success = 2;
+}
+
+message GetUserRecommendationsRequest {
+    string token = 1; // JWT token for authentication
+}
+
+message Recommendation {
+    string name = 1;
+    string category = 2;
+    float rating = 3;
+    int32 review_count = 4;
+    string city = 5;
+    string address = 6;
+    string phone = 7;
+    string price = 8;
+    string image_url = 9;
+    string url = 10;
+}
+
+message GetUserRecommendationsResponse {
+    repeated Recommendation recommendations = 1;
 }
