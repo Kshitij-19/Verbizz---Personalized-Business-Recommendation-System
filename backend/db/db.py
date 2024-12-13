@@ -49,6 +49,19 @@ class Database:
             print(f"Error executing query: {e}")
             return None
 
+    # def close(self):
+    #     """
+    #     Close the database connection.
+    #     """
+    #     try:
+    #         if self.cursor:
+    #             self.cursor.close()
+    #         if self.connection:
+    #             self.connection.close()
+    #         print("Database connection closed.")
+    #     except Error as e:
+    #         print(f"Error closing database connection: {e}")
+
     def close(self):
         """
         Close the database connection.
@@ -56,8 +69,11 @@ class Database:
         try:
             if self.cursor:
                 self.cursor.close()
+        except Error as e:
+            print(f"Error closing cursor: {e}")
+
+        try:
             if self.connection:
                 self.connection.close()
-            print("Database connection closed.")
         except Error as e:
             print(f"Error closing database connection: {e}")

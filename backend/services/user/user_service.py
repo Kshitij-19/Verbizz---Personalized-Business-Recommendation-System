@@ -16,8 +16,44 @@ class UserService(user_pb2_grpc.UserServiceServicer):
         """
         self.db = db
 
+    # def RegisterUser(self, request, context):
+    #     try:
+    #         # Hash the password
+    #         hashed_password = bcrypt.hashpw(request.password.encode('utf-8'), bcrypt.gensalt())
+
+    #         # Insert user into the database
+    #         query = """
+    #         INSERT INTO Users (email, password_hash, name, preferences, preferences_collected)
+    #         VALUES (%s, %s, %s, %s, TRUE)
+    #         """
+    #         self.db.execute(query, (request.email, hashed_password.decode('utf-8'), request.name, request.preferences))
+
+    #         # Fetch recommendations based on preferences
+    #         recommendations = self.get_recommendations(request.preferences)
+
+    #         return user_pb2.RegisterUserResponse(
+    #             message="User registered successfully",
+    #             success=True,
+    #             recommendations=recommendations
+    #         )
+    #     except Exception as e:
+    #         context.set_code(grpc.StatusCode.ALREADY_EXISTS)
+    #         context.set_details('Email already exists')
+    #         return user_pb2.RegisterUserResponse(message="User registration failed", success=False)
+
     def RegisterUser(self, request, context):
         try:
+            # Check if the user already exists
+            check_query = "SELECT id FROM Users WHERE email = %s"
+            existing_user = self.db.fetch_one(check_query, (request.email,))
+            if existing_user:
+                context.set_code(grpc.StatusCode.ALREADY_EXISTS)
+                context.set_details("Email already exists")
+                return user_pb2.RegisterUserResponse(
+                    message="User registration failed",
+                    success=False
+                )
+
             # Hash the password
             hashed_password = bcrypt.hashpw(request.password.encode('utf-8'), bcrypt.gensalt())
 
@@ -37,9 +73,10 @@ class UserService(user_pb2_grpc.UserServiceServicer):
                 recommendations=recommendations
             )
         except Exception as e:
-            context.set_code(grpc.StatusCode.ALREADY_EXISTS)
-            context.set_details('Email already exists')
+            context.set_code(grpc.StatusCode.INTERNAL)
+            context.set_details("Internal server error")
             return user_pb2.RegisterUserResponse(message="User registration failed", success=False)
+
 
     def get_recommendations(self, preferences):
         # Call the Recommendation API or logic

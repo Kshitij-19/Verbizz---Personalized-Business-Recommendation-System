@@ -15,9 +15,7 @@ class BusinessService(pb2_grpc.BusinessServiceServicer):
         self.kafka_producer = kafka_producer
 
     def GetBusiness(self, request, context):
-        query = """
-        SELECT * FROM Business WHERE id = %s
-        """
+        query = """SELECT * FROM Business WHERE id = %s"""
         business = self.db.fetch_one(query, (request.id,))
         if not business:
             context.set_code(grpc.StatusCode.NOT_FOUND)
