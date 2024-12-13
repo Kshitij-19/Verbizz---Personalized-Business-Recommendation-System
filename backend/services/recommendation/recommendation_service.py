@@ -20,7 +20,6 @@ class RecommendationService(pb2_grpc.RecommendationServiceServicer):
         self.data = data
         self.vectorizer = vectorizer
 
-
     def GetRecommendations(self, request, context):
         """
         Provide recommendations based on category and city preferences, with caching.

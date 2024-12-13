@@ -139,7 +139,7 @@ def test_login_user():
                 password="securepassword123"
             ))
             print("LoginUser Response:", response)
-            return response.token, response.user_id  # Return token and user_id
+            return response.token, response.user_id, response.recommendations  # Return token and user_id
     except grpc.RpcError as e:
         print(f"Error during LoginUser RPC: {e.details()} (Code: {e.code()})")
 
@@ -259,35 +259,35 @@ def test_get_recommendations():
 
 
 if __name__ == "__main__":
-    # print("Testing AddBusiness RPC:")
-    # test_add_business()
-    #
-    # print("\nTesting GetBusiness RPC:")
-    # test_get_business()
-    #
-    # print("\nTesting GetBusinessByName RPC:")
-    # test_get_business_by_name()
-    #
-    # print("\nTesting GetBusinessByLocation RPC:")
-    # test_get_business_by_location()
-    #
-    # print("\nTesting GetBusinessByCategory RPC:")
-    # test_get_business_by_category()
-    #
-    # print("\nTesting GetBusinessByRating RPC:")
-    # test_get_business_by_rating()
-    #
-    # print("\nTesting GetBusinessByProximity RPC:")
-    # test_get_business_by_proximity()
-    #
-    # print("\nTesting GetTrendingBusinesses RPC:")
-    # test_get_trending_businesses()
-    #
-    # print("Testing RegisterUser RPC:")
-    # test_register_user()
-    #
-    print("\nTesting LoginUser RPC:")
-    test_login_user()
+    print("Testing AddBusiness RPC:")
+    test_add_business()
+
+    print("\nTesting GetBusiness RPC:")
+    test_get_business()
+
+    print("\nTesting GetBusinessByName RPC:")
+    test_get_business_by_name()
+
+    print("\nTesting GetBusinessByLocation RPC:")
+    test_get_business_by_location()
+
+    print("\nTesting GetBusinessByCategory RPC:")
+    test_get_business_by_category()
+
+    print("\nTesting GetBusinessByRating RPC:")
+    test_get_business_by_rating()
+
+    print("\nTesting GetBusinessByProximity RPC:")
+    test_get_business_by_proximity()
+
+    print("\nTesting GetTrendingBusinesses RPC:")
+    test_get_trending_businesses()
+
+    print("Testing RegisterUser RPC:")
+    test_register_user()
+
+    # print("\nTesting LoginUser RPC:")
+    # test_login_user()
     #
     # if token:
     #     print("\nTesting GetUserProfile RPC:")
@@ -298,6 +298,6 @@ if __name__ == "__main__":
     #
     #     print("\nTesting DeleteUser RPC:")
     #     test_delete_user(token)
-    # #
-    # print("\nTesting GetRecommendations RPC:")
-    # test_get_recommendations()
+    #
+    print("\nTesting GetRecommendations RPC:")
+    test_get_recommendations()

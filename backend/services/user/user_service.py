@@ -113,14 +113,17 @@ class UserService(user_pb2_grpc.UserServiceServicer):
             # Fetch user from the database
             query = "SELECT id, password_hash, preferences, preferences_collected FROM Users WHERE email = %s"
             user = self.db.fetch_one(query, (request.email,))
-            logging.info(f"User id: {user['id']}")
             if not user:
+                logging.error("User not found.")
                 context.set_code(grpc.StatusCode.NOT_FOUND)
                 context.set_details("User not found")
                 return user_pb2.LoginUserResponse(message="Invalid email or password", success=False)
 
+            logging.info(f"User found: ID {user['id']}")
+
             # Verify password
             if not bcrypt.checkpw(request.password.encode("utf-8"), user["password_hash"].encode("utf-8")):
+                logging.error("Invalid password.")
                 context.set_code(grpc.StatusCode.UNAUTHENTICATED)
                 context.set_details("Invalid credentials")
                 return user_pb2.LoginUserResponse(message="Invalid email or password", success=False)
@@ -131,73 +134,84 @@ class UserService(user_pb2_grpc.UserServiceServicer):
                 SECRET_KEY,
                 algorithm="HS256",
             )
-            logging.info(f"User token: {token}")
+            logging.info(f"JWT token generated for user {user['id']}")
 
-            # Handle first-time vs returning user logic
+            # Returning user logic
+            if isinstance(user["preferences"], str):
+                preferences = json.loads(user["preferences"])  # Parse preferences only if it's a JSON string
+            else:
+                preferences = user["preferences"]  # Use directly if it's already a dict
+
+            # Check if preferences are collected
             if not user["preferences_collected"]:
-                # First-time user: prompt to set preferences
+                logging.info("User has not set preferences yet.")
                 return user_pb2.LoginUserResponse(
                     message="Preferences required",
                     success=True,
                     token=token,
                     user_id=user["id"],
+                    preferences=json.dumps(preferences)
                 )
-            else:
-                # Returning user: Check cache for recommendations
-                cache_key = f"user_{user['id']}_recommendations"
-                if self.redis_client:
-                    cached_recommendations = self.redis_client.get(cache_key)
-                    if cached_recommendations:
-                        logging.info(f"Cache hit for user {user['id']}")
-                        return user_pb2.LoginUserResponse(
-                            message="Login successful.",
-                            success=True,
-                            token=token,
-                            user_id=user["id"],
-                            recommendations=cached_recommendations,  # Cached response is already serialized
-                        )
 
-                # Fetch recommendations if not cached
-                preferences = user["preferences"] # Parse preferences from JSON
-                logging.info(f"User preferences: {preferences}")
-                rec_request = rec_pb2.RecommendationRequest(
-                    category=preferences["category"], city=preferences["city"]
-                )
-                response = self.recommendation_service.GetRecommendations(rec_request, context)
-                logging.info(f"Response from recommendation service: {response}")
 
-                # Prepare recommendations response
-                recommendations = [
-                    {
-                        "name": rec.name,
-                        "category": rec.category,
-                        "rating": rec.rating,
-                        "review_count": rec.review_count,
-                        "city": rec.city,
-                        "address": rec.address,
-                        "phone": rec.phone,
-                        "price": rec.price,
-                        "image_url": rec.image_url,
-                        "url": rec.url,
-                    }
-                    for rec in response.recommendations
-                ]
 
-                logging.info(f"Recommendations: {recommendations}")
+            logging.info(f"User preferences: {preferences}")
 
-                serialized_recommendations = json.dumps(recommendations)
+            # Check cache for recommendations
+            cache_key = f"user_{user['id']}_recommendations"
+            if self.redis_client:
+                cached_recommendations = self.redis_client.get(cache_key)
+                if cached_recommendations:
+                    logging.info(f"Cache hit for user {user['id']}")
+                    return user_pb2.LoginUserResponse(
+                        message="Login successful.",
+                        success=True,
+                        token=token,
+                        user_id=user["id"],
+                        preferences=json.dumps(preferences),
+                        recommendations=cached_recommendations,  # Cached recommendations
+                    )
 
-                # Save recommendations to cache
-                if self.redis_client:
-                    self.redis_client.set(cache_key, serialized_recommendations, ex=3600)  # Cache for 1 hour
+            # Fetch recommendations if not cached
+            rec_request = rec_pb2.RecommendationRequest(
+                category=preferences["category"], city=preferences["city"]
+            )
+            response = self.recommendation_service.GetRecommendations(rec_request, context)
+            logging.info(f"Response from recommendation service: {response}")
 
-                return user_pb2.LoginUserResponse(
-                    message="Login successful.",
-                    success=True,
-                    token=token,
-                    user_id=user["id"],
-                    recommendations=serialized_recommendations,
-                )
+            # Prepare recommendations response
+            recommendations = [
+                {
+                    "name": rec.name,
+                    "category": rec.category,
+                    "rating": rec.rating,
+                    "review_count": rec.review_count,
+                    "city": rec.city,
+                    "address": rec.address,
+                    "phone": rec.phone,
+                    "price": rec.price,
+                    "image_url": rec.image_url,
+                    "url": rec.url,
+                }
+                for rec in response.recommendations
+            ]
+
+            logging.info(f"Recommendations for user {user['id']}: {recommendations}")
+
+            serialized_recommendations = json.dumps(recommendations)
+
+            # Save recommendations to cache
+            if self.redis_client:
+                self.redis_client.set(cache_key, serialized_recommendations, ex=3600)  # Cache for 1 hour
+
+            return user_pb2.LoginUserResponse(
+                message="Login successful.",
+                success=True,
+                token=token,
+                user_id=user["id"],
+                preferences=json.dumps(preferences),
+                recommendations=serialized_recommendations,
+            )
         except grpc.RpcError as e:
             logging.error(f"Error calling Recommendation Service: {e.details()}")
             context.set_code(grpc.StatusCode.INTERNAL)
@@ -207,6 +221,7 @@ class UserService(user_pb2_grpc.UserServiceServicer):
                 success=True,
                 token=token,
                 user_id=user["id"],
+                preferences=json.dumps(preferences),
                 recommendations="[]",
             )
         except Exception as e:
