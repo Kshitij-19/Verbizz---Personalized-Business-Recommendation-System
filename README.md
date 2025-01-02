@@ -46,8 +46,31 @@ The project is built on a microservices architecture, ensuring scalability, reli
 - Unit and integration testing frameworks
 
 ## System Architecture
-![System Architecture](sys_arch.jpeg)
+![System Architecture](Images/sys_arch.jpeg)
 
+## Application Screenshots
+
+Below are screenshots showcasing the key features of the Verbizz application:
+
+### 1. **Register**
+   - **Description**: The registration page allows new users to create an account by providing their email, password, name, preferences (categories), and city.
+   - **Screenshot**:  
+     ![Register](Images/register.png)
+
+### 2. **Login**
+   - **Description**: The login page enables existing users to securely access their accounts using their email and password.
+   - **Screenshot**:  
+     ![Login](Images/login.png)
+
+### 3. **Recommendations**
+   - **Description**: The recommendations page displays personalized business suggestions based on user preferences, such as category and city.
+   - **Screenshot**:  
+     ![Recommendations](Images/recommend.png)
+
+### 4. **Update Preferences**
+   - **Description**: The update preferences page allows users to modify their preferences for categories and city, dynamically updating the recommendations.
+   - **Screenshot**:  
+     ![Update Preferences](Images/update_pref.png)
 ## Installation
 
 ### Prerequisites
