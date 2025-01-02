@@ -10,11 +10,8 @@ service RecommendationService {
 
 // Request message for recommendations
 message RecommendationRequest {
-    string category = 1;           // Category of the business (e.g., "Restaurant")
-    string city = 2;               // City to filter businesses (e.g., "New York")
-    float min_rating = 3;          // Minimum rating (e.g., 4.0)
-    int32 min_review_count = 4;    // Minimum review count
-    string price = 5;              // Price range
+    repeated string category = 1; // List of categories
+    string city = 2;             // City to filter businesses (e.g., "New York")
 }
 
 // Response message for recommendations

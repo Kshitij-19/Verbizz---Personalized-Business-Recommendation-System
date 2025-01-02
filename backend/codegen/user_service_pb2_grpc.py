@@ -40,6 +40,16 @@ class UserServiceStub(object):
                 request_serializer=user__service__pb2.DeleteUserRequest.SerializeToString,
                 response_deserializer=user__service__pb2.DeleteUserResponse.FromString,
                 )
+        self.GetUserRecommendations = channel.unary_unary(
+                '/user.UserService/GetUserRecommendations',
+                request_serializer=user__service__pb2.GetUserRecommendationsRequest.SerializeToString,
+                response_deserializer=user__service__pb2.GetUserRecommendationsResponse.FromString,
+                )
+        self.UpdatePreferences = channel.unary_unary(
+                '/user.UserService/UpdatePreferences',
+                request_serializer=user__service__pb2.UpdatePreferencesRequest.SerializeToString,
+                response_deserializer=user__service__pb2.UpdatePreferencesResponse.FromString,
+                )
 
 
 class UserServiceServicer(object):
@@ -76,6 +86,18 @@ class UserServiceServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def GetUserRecommendations(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def UpdatePreferences(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_UserServiceServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -103,6 +125,16 @@ def add_UserServiceServicer_to_server(servicer, server):
                     servicer.DeleteUser,
                     request_deserializer=user__service__pb2.DeleteUserRequest.FromString,
                     response_serializer=user__service__pb2.DeleteUserResponse.SerializeToString,
+            ),
+            'GetUserRecommendations': grpc.unary_unary_rpc_method_handler(
+                    servicer.GetUserRecommendations,
+                    request_deserializer=user__service__pb2.GetUserRecommendationsRequest.FromString,
+                    response_serializer=user__service__pb2.GetUserRecommendationsResponse.SerializeToString,
+            ),
+            'UpdatePreferences': grpc.unary_unary_rpc_method_handler(
+                    servicer.UpdatePreferences,
+                    request_deserializer=user__service__pb2.UpdatePreferencesRequest.FromString,
+                    response_serializer=user__service__pb2.UpdatePreferencesResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -197,5 +229,39 @@ class UserService(object):
         return grpc.experimental.unary_unary(request, target, '/user.UserService/DeleteUser',
             user__service__pb2.DeleteUserRequest.SerializeToString,
             user__service__pb2.DeleteUserResponse.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def GetUserRecommendations(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/user.UserService/GetUserRecommendations',
+            user__service__pb2.GetUserRecommendationsRequest.SerializeToString,
+            user__service__pb2.GetUserRecommendationsResponse.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def UpdatePreferences(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/user.UserService/UpdatePreferences',
+            user__service__pb2.UpdatePreferencesRequest.SerializeToString,
+            user__service__pb2.UpdatePreferencesResponse.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)

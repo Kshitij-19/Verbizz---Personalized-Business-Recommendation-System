@@ -1,0 +1,65 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: grpc-server
+  labels:
+    app: grpc-server
+spec:
+  replicas: 1  # Adjust replicas based on scalability needs
+  selector:
+    matchLabels:
+      app: grpc-server
+  template:
+    metadata:
+      labels:
+        app: grpc-server
+    spec:
+      containers:
+      - name: grpc-server
+        image: dkiran760/grpc-server:latest  # Replace with your actual image
+        ports:
+        - containerPort: 50051
+        env:
+        - name: REDIS_HOST
+          value: "redis-service"  # Use the Redis service name in Kubernetes
+        - name: REDIS_PORT
+          value: "6379"
+        - name: KAFKA_BOOTSTRAP_SERVERS
+          value: "kafka-service:9092"  # Use Kafka service name in Kubernetes
+        - name: DB_NAME
+          value: "postgres"       # Database name
+        - name: DB_USER
+          value: "postgres"       # Database user
+        - name: DB_PASSWORD
+          value: "rootpass123"    # Database password
+        - name: DB_HOST
+          value: "postgres-service"  # PostgreSQL service name in Kubernetes
+        - name: DB_PORT
+          value: "5432"           # PostgreSQL port
+        livenessProbe:
+          exec:
+            command:
+              - grpc_health_probe
+              - -addr=:50051
+          initialDelaySeconds: 15
+          periodSeconds: 20
+        readinessProbe:
+          exec:
+            command:
+              - grpc_health_probe
+              - -addr=:50051
+          initialDelaySeconds: 5
+          periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: grpc-server
+spec:
+  selector:
+    app: grpc-server
+  ports:
+  - protocol: TCP
+    port: 50051
+    targetPort: 50051
+  type: ClusterIP

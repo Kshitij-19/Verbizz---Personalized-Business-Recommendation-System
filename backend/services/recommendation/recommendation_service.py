@@ -1,144 +1,129 @@
-from filecmp import clear_cache
-
 import grpc
-import numpy as np
-import redis
-import pickle
-from joblib import load, dump
 from codegen import recommendation_service_pb2 as pb2
 from codegen import recommendation_service_pb2_grpc as pb2_grpc
-
-from db.business_db import BusinessDatabase
-
-# Initialize database connection
-db = BusinessDatabase(db_name="mydb", user="kirandevihosur", password="newpassword")
-print("db info", db)
-
-# Initialize Redis connection
-redis_client = redis.Redis(host='localhost', port=6379, decode_responses=False)
-
-# File paths
-DATA_FILE = "data/data.pkl"
-SIMILARITY_MATRIX_FILE = "data/similarity_matrix.pkl"
-
-# Load preprocessed data and similarity matrix
-try:
-    print("Loading data and similarity matrix from files...")
-    data = load(DATA_FILE)
-    similarity_matrix = load(SIMILARITY_MATRIX_FILE)
-
-    print("Data and similarity matrix loaded successfully.")
-    print(f"Initial number of businesses: {len(data)}")
-    print(f"Initial similarity matrix size: {similarity_matrix.shape}")
-
-except Exception as e:
-    print(f"Error loading data or similarity matrix: {e}")
-    data = None
-    similarity_matrix = None
-
+import logging
+import json
+from sklearn.metrics.pairwise import cosine_similarity
 
 class RecommendationService(pb2_grpc.RecommendationServiceServicer):
 
-    def __init__(self, redis_client):
+    def __init__(self, redis_client, db, data, vectorizer):
+        """
+        Initializes the RecommendationService with the required resources.
+        :param redis_client: Redis client instance.
+        :param db: Database instance.
+        :param data: Preloaded data for recommendations.
+        :param similarity_matrix: Preloaded similarity matrix.
+        """
         self.redis_client = redis_client
+        self.db = db
+        self.data = data
+        self.vectorizer = vectorizer
 
     def GetRecommendations(self, request, context):
         """
-        Provides recommendations based on user input: category, city, price, minimum rating, and review count.
+        Provide recommendations based on category and city preferences, with caching.
         """
-        global data, similarity_matrix
+        # Combine user-selected categories into a single string for caching key
+        user_categories = ' '.join(request.category).lower()
+        user_city = request.city.lower()
+        cache_key = f"recommendations:{user_categories}:{user_city}"
 
-        if data is None or similarity_matrix is None:
-            context.set_code(grpc.StatusCode.INTERNAL)
-            context.set_details("Data or similarity matrix not loaded.")
-            return pb2.RecommendationResponse()
-
-        # Validate input
-        if request.min_rating < 0 or request.min_rating > 5:
-            context.set_code(grpc.StatusCode.INVALID_ARGUMENT)
-            context.set_details("min_rating must be between 0 and 5.")
-            return pb2.RecommendationResponse()
-
-        # Check if recommendations are cached
-        cache_key = f"{request.category}_{request.city}_{request.price}_{request.min_rating}_{request.min_review_count}"
+        # Check the cache
         cached_recommendations = self.redis_client.get(cache_key)
         if cached_recommendations:
             print(f"Cache hit for key: {cache_key}")
-            return pb2.RecommendationResponse.FromString(cached_recommendations)
+            logging.info(f"Cache hit for key: {cache_key}")
+            recommendations_data = json.loads(cached_recommendations)
+            return pb2.RecommendationResponse(
+                recommendations=[
+                    pb2.BusinessRecommendation(
+                        name=rec["name"],
+                        category=rec["category"],
+                        rating=rec["rating"],
+                        review_count=rec["review_count"],
+                        city=rec["city"],
+                        address=rec["address"],
+                        phone=rec["phone"],
+                        price=rec["price"],
+                        image_url=rec["image_url"],
+                        url=rec["url"]
+                    )
+                    for rec in recommendations_data
+                ]
+            )
 
         print(f"Cache miss for key: {cache_key}")
+        logging.info(f"Cache miss for key: {cache_key}")
 
-        # Get the maximum review count dynamically from the database
-        try:
-            max_review_query = "SELECT MAX(review_count) AS max_review_count FROM Business"
-            max_review_result = db.fetch_one(max_review_query)
-            max_review_count = max_review_result['max_review_count'] if max_review_result else 1
-            print(f"Max review count dynamically fetched: {max_review_count}")
-        except Exception as e:
-            context.set_code(grpc.StatusCode.INTERNAL)
-            context.set_details(f"Error fetching max review count: {str(e)}")
-            return pb2.RecommendationResponse()
+        print("Data check", self.data.head())
 
-        # Scale inputs
-        scaled_min_review_count = request.min_review_count / max_review_count
-        print("scaled_min_review_count", scaled_min_review_count)
-        normalized_min_rating = request.min_rating / 5.0
-        print("normalized_min_rating", normalized_min_rating)
-
-        # Filter the data
-        filtered_data = data[
-            (data['category'].str.contains(request.category, case=False, na=False)) &
-            (data['city'].str.contains(request.city, case=False, na=False)) &
-            (data['rating'] >= normalized_min_rating) &
-            (data['review_count'] >= scaled_min_review_count) &
-            (data['price'] == request.price)
-        ]
-        print("filtered_data", filtered_data)
-
-        if filtered_data.empty:
+        # Filter data by city
+        city_filtered_data = self.data[self.data['city'].str.lower() == user_city]
+        if city_filtered_data.empty:
             context.set_code(grpc.StatusCode.NOT_FOUND)
-            context.set_details("No businesses match the given preferences.")
+            context.set_details(f"No businesses found in {request.city}")
             return pb2.RecommendationResponse()
 
-        # Use the first matching business for recommendation
-        business_index = int(filtered_data.index[0])  # Convert index to integer
+        # Prepare the user query
+        user_query = ' '.join(request.category)
+        user_vector = self.vectorizer.transform([user_query])
 
-        # Validate the index against similarity matrix dimensions
-        if business_index < 0 or business_index >= similarity_matrix.shape[0]:
-            print("Inside the condition")
-            context.set_code(grpc.StatusCode.INTERNAL)
-            context.set_details("Index out of bounds for similarity matrix.")
+        # Vectorize the category features of the filtered data
+        category_vectors = self.vectorizer.transform(city_filtered_data['category_features'])
+
+        # Compute cosine similarity
+        category_similarity = cosine_similarity(user_vector, category_vectors).flatten()
+
+        # Add similarity scores to the filtered data
+        city_filtered_data = city_filtered_data.copy()
+        city_filtered_data['category_similarity'] = category_similarity
+
+        # Filter and sort by similarity
+        recommended_businesses = (
+            city_filtered_data[city_filtered_data['category_similarity'] > 0]
+            .sort_values(by='category_similarity', ascending=False)
+        )
+
+        # If no businesses match the category
+        if recommended_businesses.empty:
+            context.set_code(grpc.StatusCode.NOT_FOUND)
+            context.set_details(f"No businesses match the preferences in {request.city}")
             return pb2.RecommendationResponse()
-
-        # Get top 5 similar businesses
-        similar_indices = similarity_matrix[business_index].argsort()[::-1][1:6]
 
         # Prepare the recommendations
         recommendations = []
-        for idx in similar_indices:
-            if idx < len(data):
-                business = data.iloc[idx]
-                original_rating = round(business['rating'] * 5.0, 2)# Assuming rating was normalized to 0-1
-                print(original_rating)
-                original_review_count= int(business['review_count'] * max_review_count)  # Assuming max_review_count is know
-                recommendations.append(pb2.BusinessRecommendation(
-                    name=business['name'],
-                    category=business['category'],
-                    rating=original_rating,
-                    review_count=original_review_count,
-                    city=business['city'],
-                    address=business['address'],
-                    phone=business['phone'],
-                    price=business['price'],
-                    image_url=business['image_url'],
-                    url=business['url']
-                ))
-
-        print("Business recommendations", recommendations)
-        # Convert the recommendations to protobuf response
-        response = pb2.RecommendationResponse(recommendations=recommendations)
-
-        # Cache the response in Redis
-        redis_client.set(cache_key, response.SerializeToString(), ex=3600)  # Cache for 1 hour
-
-        return response
+        for _, business in recommended_businesses.head(10).iterrows():
+            recommendations.append({
+                "name": business['name'],
+                "category": business['category'],
+                "rating": business['rating'],
+                "review_count": business['review_count'],
+                "city": business['city'],
+                "address": business['address'],
+                "phone": business['phone'],
+                "price": business['price'],
+                "image_url": business['image_url'],
+                "url": business['url']
+            })
+        logging.info(f"Generated recommendations: {recommendations}")
+        # Cache the recommendations
+        self.redis_client.set(cache_key, json.dumps(recommendations), ex=3600)  # Cache for 1 hour
+        # Return recommendations in the response
+        return pb2.RecommendationResponse(
+            recommendations=[
+                pb2.BusinessRecommendation(
+                    name=rec["name"],
+                    category=rec["category"],
+                    rating=rec["rating"],
+                    review_count=rec["review_count"],
+                    city=rec["city"],
+                    address=rec["address"],
+                    phone=rec["phone"],
+                    price=rec["price"],
+                    image_url=rec["image_url"],
+                    url=rec["url"]
+                )
+                for rec in recommendations
+            ]
+        )

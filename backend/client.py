@@ -38,22 +38,22 @@ def test_add_business():
             stub = pb2_grpc.BusinessServiceStub(channel)
             response = stub.AddBusiness(pb2.NewBusinessRequest(
                 businessid=unique_businessid,
-                name="Italian Cafe",
-                rating=4.3,
-                review_count=150,
-                address="931 Main Street",
+                name="Test Cafe",
+                rating=4.5,
+                review_count=550,
+                address="128 Main Street",
                 category="Cafe",
-                city="New York",
-                state="NY",
+                city="Boulder",
+                state="CO",
                 country="USA",
-                zip_code="13204",
-                latitude=80.7126,
-                longitude=-14.0060,
-                phone="485-456-4830",
-                price="$$$",
-                image_url="http://example1.com/image1.jpg",
-                url="http://example1.com",
-                distance=2
+                zip_code="85884",
+                latitude=77.7126,
+                longitude=-24.0060,
+                phone="685-456-4830",
+                price="$$",
+                image_url="http://example2.com/image2.jpg",
+                url="http://example2.com",
+                distance=1
             ))
             print("Added Business:")
             print(f"  ID: {response.id}")
@@ -75,7 +75,7 @@ def test_register_user():
                 email="testuser@example.com",
                 password="securepassword123",
                 name="Test User",
-                preferences='{"category": ["Cafe", "Restaurant"], "location": "New York"}'
+                preferences='{"category": ["Cafe", "Korean"], "city": "New York"}'
             ))
             print("RegisterUser Response:", response)
     except grpc.RpcError as e:
@@ -139,7 +139,7 @@ def test_login_user():
                 password="securepassword123"
             ))
             print("LoginUser Response:", response)
-            return response.token, response.user_id  # Return token and user_id
+            return response.token, response.user_id, response.recommendations  # Return token and user_id
     except grpc.RpcError as e:
         print(f"Error during LoginUser RPC: {e.details()} (Code: {e.code()})")
 
@@ -231,10 +231,10 @@ def test_get_recommendations():
             stub = rec_pb2_grpc.RecommendationServiceStub(channel)
             # Example: Recommendation request
             request = rec_pb2.RecommendationRequest(
-                category="Cafe",
+                category=["Korean", "Tapas/Small Plates"],
                 city="New York",
-                min_rating=4.0,
-                min_review_count=200,
+                min_rating=4.5,
+                min_review_count=120,
                 price="$$"
             )
             response = stub.GetRecommendations(request)
@@ -286,18 +286,18 @@ if __name__ == "__main__":
     print("Testing RegisterUser RPC:")
     test_register_user()
 
-    print("\nTesting LoginUser RPC:")
-    token, user_id = test_login_user()
-
-    if token:
-        print("\nTesting GetUserProfile RPC:")
-        test_get_user_profile(token, user_id)
-
-        print("\nTesting UpdateUserProfile RPC:")
-        test_update_user_profile(token)
-
-        print("\nTesting DeleteUser RPC:")
-        test_delete_user(token)
-
+    # print("\nTesting LoginUser RPC:")
+    # test_login_user()
+    #
+    # if token:
+    #     print("\nTesting GetUserProfile RPC:")
+    #     test_get_user_profile(token, user_id)
+    #
+    #     print("\nTesting UpdateUserProfile RPC:")
+    #     test_update_user_profile(token)
+    #
+    #     print("\nTesting DeleteUser RPC:")
+    #     test_delete_user(token)
+    #
     print("\nTesting GetRecommendations RPC:")
     test_get_recommendations()

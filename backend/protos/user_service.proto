@@ -9,6 +9,8 @@ service UserService {
   rpc GetUserProfile (GetUserProfileRequest) returns (GetUserProfileResponse);
   rpc UpdateUserProfile (UpdateUserProfileRequest) returns (UpdateUserProfileResponse);
   rpc DeleteUser (DeleteUserRequest) returns (DeleteUserResponse);
+  rpc GetUserRecommendations(GetUserRecommendationsRequest) returns (GetUserRecommendationsResponse);
+  rpc UpdatePreferences(UpdatePreferencesRequest) returns (UpdatePreferencesResponse);
 }
 
 // Request and response for RegisterUser
@@ -36,7 +38,9 @@ message LoginUserResponse {
     bool success = 2;
     string token = 3; // JWT token for authentication
     int32 user_id = 4; // Add user_id to the response
-    string recommendations = 5; // Optional field for returning recommendations
+    string recommendations = 5; // Optional field for returning recommendation
+    string preferences = 6;
+    string name = 7;
 }
 
 // Request and response for GetUserProfile
@@ -71,4 +75,37 @@ message DeleteUserRequest {
 message DeleteUserResponse {
   string message = 1;
   bool success = 2;
+}
+
+message GetUserRecommendationsRequest {
+    string token = 1; // JWT token for authentication
+}
+
+message Recommendation {
+    string name = 1;
+    string category = 2;
+    float rating = 3;
+    int32 review_count = 4;
+    string city = 5;
+    string address = 6;
+    string phone = 7;
+    string price = 8;
+    string image_url = 9;
+    string url = 10;
+}
+
+message GetUserRecommendationsResponse {
+    repeated Recommendation recommendations = 1;
+}
+
+message UpdatePreferencesRequest {
+    int32 user_id = 1;
+    repeated string category = 2;
+    string city = 3;
+}
+
+message UpdatePreferencesResponse {
+    string message = 1;
+    bool success = 2;
+    string recommendations = 3; // New recommendations based on updated preferences
 }
