@@ -46,7 +46,7 @@ The project is built on a microservices architecture, ensuring scalability, reli
 - Unit and integration testing frameworks
 
 ## System Architecture
-![System Architecture](docs/architecture-diagram.png)
+![System Architecture](sys_arch.jpeg)
 
 ## Installation
 
