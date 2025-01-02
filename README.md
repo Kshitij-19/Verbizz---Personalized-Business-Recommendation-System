@@ -128,8 +128,7 @@ The `data` directory contains essential files for recommendations. Below is a de
 - Integrate advanced machine learning models for more accurate recommendations.
 - Enhance UI/UX for a richer user experience.
 - Add support for multilingual recommendations.
-- Implement detailed analytics and reporting features.
-  
+- Implement detailed analytics and reporting features. 
 ---
-
+For any queries or contributions, please contact Kiran Devihosur at kirandevihosur74@gmail.com  
 Happy coding! 🎉
