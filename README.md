@@ -153,5 +153,3 @@ The `data` directory contains essential files for recommendations. Below is a de
 - Add support for multilingual recommendations.
 - Implement detailed analytics and reporting features. 
 ---
-For any queries or contributions, please contact Kiran Devihosur at kirandevihosur74@gmail.com  
-Happy coding! 🎉
